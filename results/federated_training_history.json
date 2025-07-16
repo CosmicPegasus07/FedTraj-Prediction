@@ -1,0 +1,19 @@
+{
+    "losses_distributed": [
+        [
+            1,
+            68003.515625
+        ],
+        [
+            2,
+            69978.77734375
+        ],
+        [
+            3,
+            63267.83203125
+        ]
+    ],
+    "metrics_distributed": {},
+    "losses_centralized": [],
+    "metrics_centralized": {}
+}

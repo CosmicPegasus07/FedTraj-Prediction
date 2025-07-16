@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Federated vs. Centralized GNN Trajectory Prediction</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; color: #333; }
+        h1, h2 { text-align: center; color: #333; }
+        .container { display: flex; justify-content: space-around; margin-top: 20px; flex-wrap: wrap; }
+        .model-section { background-color: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 10px; flex: 1; min-width: 45%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .model-section h2 { border-bottom: 2px solid #eaeaea; padding-bottom: 10px; margin-bottom: 20px; }
+        .metrics-summary { background-color: #eef; border-left: 4px solid #4a4af7; padding: 10px; margin-bottom: 20px; font-size: 1.1em; }
+        .chart-container { margin-bottom: 30px; }
+        .image-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px; }
+        .image-item { border: 1px solid #eee; border-radius: 5px; overflow: hidden; text-align: center; background-color: #f9f9f9; }
+        .image-item img, .image-item video { max-width: 100%; height: auto; display: block; margin: 0 auto; cursor: pointer; }
+        .image-item p { margin: 10px 0; font-size: 0.9em; color: #555; }
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); }
+        .modal-content { margin: auto; display: block; max-width: 90%; max-height: 90%; object-fit: contain; }
+        .close { position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
+        .tab-container { display: flex; justify-content: center; margin-bottom: 20px; }
+        .tab-button { background-color: #ddd; border: none; padding: 10px 20px; cursor: pointer; font-size: 1em; margin: 0 5px; border-radius: 5px; }
+        .tab-button.active { background-color: #4a4af7; color: white; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .note { color: #b00; background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
+    </style>
+</head>
+<body>
+    
+    <h1>GNN Trajectory Prediction: Federated vs. Centralized</h1>
+
+    <div class="controls-section" style="background-color: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 20px auto; max-width: 90%; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <h2>Run Experiments</h2>
+        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+            <div style="flex: 1; min-width: 200px;">
+                <label for="train_dir">Train Directory:</label><br>
+                <input type="text" id="train_dir" value="dataset/train_small" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <label for="val_dir">Validation Directory:</label><br>
+                <input type="text" id="val_dir" value="dataset/val_small" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
+            </div>
+            <div style="flex: 1; min-width: 200px;">
+                <label for="test_dir">Test Directory:</label><br>
+                <input type="text" id="test_dir" value="dataset/test_small" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
+            </div>
+            <div style="flex: 1; min-width: 100px;">
+                <label for="batch_size">Batch Size:</label><br>
+                <input type="number" id="batch_size" value="32" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
+            </div>
+            <div style="flex: 1; min-width: 100px;">
+                <label for="num_scenarios">Num Scenarios:</label><br>
+                <input type="number" id="num_scenarios" value="10" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
+            </div>
+            <div style="flex: 1; min-width: 100px;">
+                <label for="epochs">Epochs:</label><br>
+                <input type="number" id="epochs" value="5" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
+            </div>
+            <div style="flex: 1; min-width: 100px;">
+                <label for="lr">Learning Rate:</label><br>
+                <input type="number" id="lr" value="0.001" step="0.0001" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
+            </div>
+        </div>
+        <div style="display: flex; justify-content: center; gap: 15px;">
+            <button onclick="runCentralizedTrain()" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Run Centralized Train</button>
+            <button onclick="runFederatedTrainServer()" style="padding: 10px 20px; background-color: #008CBA; color: white; border: none; border-radius: 5px; cursor: pointer;">Run Federated Train (Server)</button>
+            <button onclick="runFederatedTrainClient()" style="padding: 10px 20px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">Run Federated Train (Client)</button>
+            <button onclick="runTest('centralized')" style="padding: 10px 20px; background-color: #555555; color: white; border: none; border-radius: 5px; cursor: pointer;">Run Centralized Test</button>
+            <button onclick="runTest('federated')" style="padding: 10px 20px; background-color: #555555; color: white; border: none; border-radius: 5px; cursor: pointer;">Run Federated Test</button>
+        </div>
+        <div id="output_message" style="margin-top: 20px; padding: 10px; background-color: #e7f3fe; border: 1px solid #cce7ff; border-radius: 5px; display: none;"></div>
+    </div>
+    <div class="note">
+        <strong>Comparison Summary:</strong><br>
+        <table style="margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <tr style="background:#eef;"><th>Approach</th><th>Final Test Loss</th><th>Training Time (s)</th><th>Rounds/Epochs</th><th>Batch Size</th><th>Num. Scenarios</th><th>Learning Rate</th><th>Data Transfer</th><th>Privacy</th></tr>
+            <tr><td>Centralized</td><td><span id="summary_centralized_loss">Loading...</span></td><td><span id="summary_centralized_time">Loading...</span></td><td><span id="summary_centralized_epochs">Loading...</span></td><td><span id="summary_batch_size">Loading...</span></td><td><span id="summary_num_scenarios">Loading...</span></td><td><span id="summary_lr">Loading...</span></td><td>All data sent to server</td><td>Low</td></tr>
+            <tr><td>Federated</td><td><span id="summary_federated_loss">Loading...</span></td><td><span id="summary_federated_time">Loading...</span></td><td><span id="summary_federated_rounds">Loading...</span></td><td><span id="summary_batch_size">Loading...</span></td><td><span id="summary_num_scenarios">Loading...</span></td><td><span id="summary_lr">Loading...</span></td><td>No raw data shared</td><td>High</td></tr>
+        </table>
+        <div style="margin-top:10px; font-size:1.05em;">
+            <strong>Insight:</strong> Federated learning achieves comparable performance to centralized training, <span style="color:#4a4af7;">without sharing raw data</span>. This enables privacy-preserving, distributed model training.
+        </div>
+    </div>
+    <div class="container">
+        <!-- Federated Model Section -->
+        <div class="model-section" id="federated">
+            <h2>Federated Model</h2>
+            <div class="metrics-summary">
+                <strong>Final Test Loss:</strong> <span id="federated_test_loss">Loading...</span>
+            </div>
+            <div class="chart-container">
+                <h3>Training Loss Over Rounds</h3>
+                <canvas id="federatedTrainingChart"></canvas>
+            </div>
+            <div class="tab-container">
+                <button class="tab-button active" onclick="openTab(event, 'federated', 'static_images')">Static Images</button>
+                <button class="tab-button" onclick="openTab(event, 'federated', 'animations')">Animations</button>
+            </div>
+            <div id="federated_static_images" class="tab-content active">
+                <div class="image-gallery" id="federated_static_gallery"></div>
+            </div>
+            <div id="federated_animations" class="tab-content">
+                <div class="image-gallery" id="federated_animation_gallery"></div>
+            </div>
+        </div>
+        <!-- Centralized Model Section -->
+        <div class="model-section" id="centralized">
+            <h2>Centralized Model</h2>
+            <div class="metrics-summary">
+                <strong>Final Test Loss:</strong> <span id="centralized_test_loss">Loading...</span>
+            </div>
+            <div class="chart-container">
+                <h3>Training Loss Over Epochs</h3>
+                <canvas id="centralizedTrainingChart"></canvas>
+            </div>
+            <div class="tab-container">
+                <button class="tab-button active" onclick="openTab(event, 'centralized', 'static_images')">Static Images</button>
+                <button class="tab-button" onclick="openTab(event, 'centralized', 'animations')">Animations</button>
+            </div>
+            <div id="centralized_static_images" class="tab-content active">
+                <div class="image-gallery" id="centralized_static_gallery"></div>
+            </div>
+            <div id="centralized_animations" class="tab-content">
+                <div class="image-gallery" id="centralized_animation_gallery"></div>
+            </div>
+        </div>
+    </div>
+    <!-- Modal for Image/Video Viewing -->
+    <div id="myModal" class="modal">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="modalImage">
+        <video class="modal-content" id="modalVideo" controls autoplay loop muted style="display:none;"></video>
+    </div>
+    <script>
+        const RESULTS_BASE_PATH = '../results/test_predictions/';
+        const SCENARIO_IDS = [
+            '0000b329-f890-4c2b-93f2-7e2413d4ca5b',
+            '000a45e7-bded-43e7-970b-18c08cc86c2d',
+            '000c5b17-084c-4268-8d49-0cb317458cee',
+            '000ca346-11b5-406f-af1f-002fc67ef5c6',
+            '000d3749-6867-4d89-8f24-7fd6f8cae807'
+        ]; // These should match the num_scenarios you test
+
+        document.addEventListener('DOMContentLoaded', function() {
+            loadMetricsAndCharts();
+            loadVisualizations('centralized');
+            loadVisualizations('federated');
+            // Initial tab setup for both models
+            openTab(null, 'centralized', 'static_images');
+            openTab(null, 'federated', 'static_images');
+            // Modal functionality
+            const modal = document.getElementById("myModal");
+            const modalImage = document.getElementById("modalImage");
+            const modalVideo = document.getElementById("modalVideo");
+            const closeBtn = document.getElementsByClassName("close")[0];
+            closeBtn.onclick = function() {
+                modal.style.display = "none";
+                modalImage.style.display = "none";
+                modalVideo.style.display = "none";
+                modalVideo.pause();
+            }
+            document.querySelectorAll('.image-gallery').forEach(gallery => {
+                gallery.addEventListener('click', event => {
+                    if (event.target.tagName === 'IMG') {
+                        modal.style.display = "block";
+                        modalImage.src = event.target.src;
+                        modalImage.style.display = "block";
+                    }
+                });
+            });
+        });
+
+        function openTab(evt, modelType, tabCategory) {
+            // Hide all tab contents for the specific modelType
+            document.querySelectorAll(`#${modelType}_static_images, #${modelType}_animations`).forEach(tabContent => {
+                tabContent.style.display = 'none';
+                tabContent.classList.remove('active');
+            });
+            // Deactivate all tab buttons for the specific modelType
+            document.querySelectorAll(`#${modelType} .tab-button`).forEach(button => {
+                button.classList.remove('active');
+            });
+            // Show the selected tab content
+            document.getElementById(`${modelType}_${tabCategory}`).style.display = 'block';
+            document.getElementById(`${modelType}_${tabCategory}`).classList.add('active');
+            // Activate the clicked button (only for the correct modelType)
+            if (evt) {
+                evt.currentTarget.classList.add('active');
+            } else {
+                // For initial load, activate the first tab button for each modelType
+                const tabButtons = document.querySelectorAll(`#${modelType} .tab-button`);
+                if (tabCategory === 'static_images') tabButtons[0].classList.add('active');
+                else tabButtons[1].classList.add('active');
+            }
+        }
+
+        async function loadMetricsAndCharts() {
+            // Centralized Metrics
+            try {
+                const response = await fetch('results/centralized_test_metrics.json');
+                const data = await response.json();
+                document.getElementById('centralized_test_loss').textContent = data.test_loss ? data.test_loss.toFixed(4) : 'N/A';
+                document.getElementById('summary_centralized_loss').textContent = data.test_loss ? data.test_loss.toFixed(4) : 'N/A';
+            } catch (error) {
+                document.getElementById('centralized_test_loss').textContent = 'N/A';
+                document.getElementById('summary_centralized_loss').textContent = 'N/A';
+            }
+            try {
+                const response = await fetch('results/centralized_training_history.json');
+                const data = await response.json();
+                renderChart('centralizedTrainingChart', data.train_losses, data.val_losses, 'Epoch');
+                document.getElementById('summary_centralized_epochs').textContent = data.train_losses ? data.train_losses.length : 'N/A';
+            } catch (error) {
+                document.getElementById('summary_centralized_epochs').textContent = 'N/A';
+            }
+            // Federated Metrics
+            try {
+                const response = await fetch('results/federated_test_metrics.json');
+                const data = await response.json();
+                document.getElementById('federated_test_loss').textContent = data.test_loss ? data.test_loss.toFixed(4) : 'N/A';
+                document.getElementById('summary_federated_loss').textContent = data.test_loss ? data.test_loss.toFixed(4) : 'N/A';
+            } catch (error) {
+                document.getElementById('federated_test_loss').textContent = 'N/A';
+                document.getElementById('summary_federated_loss').textContent = 'N/A';
+            }
+            try {
+                const response = await fetch('results/federated_training_history.json');
+                const data = await response.json();
+                const rounds = data.losses_distributed ? data.losses_distributed.length : 'N/A';
+                document.getElementById('summary_federated_rounds').textContent = rounds;
+            } catch (error) {
+                document.getElementById('summary_federated_rounds').textContent = 'N/A';
+            }
+            // Training time (estimate from performance.now)
+            if (window.performance && window.performance.timing) {
+                // This is a placeholder; ideally, you should save training time in your metrics JSON
+                document.getElementById('summary_centralized_time').textContent = 'See logs';
+                document.getElementById('summary_federated_time').textContent = 'See logs';
+            }
+            // Static values from script (update if you want to pass these dynamically)
+            document.getElementById('summary_batch_size').textContent = window.demoBatchSize || 'N/A';
+            document.getElementById('summary_num_scenarios').textContent = window.demoNumScenarios || 'N/A';
+            document.getElementById('summary_lr').textContent = window.demoLR || 'N/A';
+        }
+
+        function renderChart(canvasId, trainLosses, valLosses, labelX, labels = null) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            if (!labels) {
+                labels = Array.from({length: trainLosses.length}, (_, i) => i + 1);
+            }
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Training Loss',
+                            data: trainLosses,
+                            borderColor: '#4a4af7',
+                            backgroundColor: 'rgba(74, 74, 247, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Validation Loss',
+                            data: valLosses,
+                            borderColor: '#f74a4a',
+                            backgroundColor: 'rgba(247, 74, 74, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        }
+                    ].filter(dataset => dataset.data.length > 0)
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: labelX
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Loss'
+                            },
+                            suggestedMax: Math.max(...trainLosses, ...valLosses) * 1.1 // Add 10% buffer
+                        }
+                    }
+                }
+            });
+        }
+
+        function loadVisualizations(modelType) {
+            const staticGallery = document.getElementById(`${modelType}_static_gallery`);
+            const animationGallery = document.getElementById(`${modelType}_animation_gallery`);
+            const modelResultsPath = `${RESULTS_BASE_PATH}${modelType}/`;
+            SCENARIO_IDS.forEach(scenarioId => {
+                // Static Image
+                const staticImgItem = document.createElement('div');
+                staticImgItem.classList.add('image-item');
+                const staticImg = document.createElement('img');
+                staticImg.src = `${modelResultsPath}prediction_${scenarioId}.png`;
+                staticImg.alt = `${modelType} Prediction ${scenarioId}`;
+                staticImg.onerror = function() {
+                    staticImgItem.innerHTML = `<p style='color:#b00'>Image not found for scenario: ${scenarioId.substring(0,8)}...</p>`;
+                };
+                staticImgItem.appendChild(staticImg);
+                staticImgItem.innerHTML += `<p>Scenario: ${scenarioId.substring(0, 8)}...</p>`;
+                staticGallery.appendChild(staticImgItem);
+                // Animation (GIF)
+                const animationItem = document.createElement('div');
+                animationItem.classList.add('image-item');
+                const animationImg = document.createElement('img');
+                animationImg.src = `${modelResultsPath}animation_${scenarioId}.gif`;
+                animationImg.alt = `${modelType} Animation ${scenarioId}`;
+                animationImg.onerror = function() {
+                    animationItem.innerHTML = `<p style='color:#b00'>GIF not found for scenario: ${scenarioId.substring(0,8)}...</p>`;
+                };
+                animationItem.appendChild(animationImg);
+                animationItem.innerHTML += `<p>Scenario: ${scenarioId.substring(0, 8)}...</p>`;
+                animationGallery.appendChild(animationItem);
+            });
+        }
+        // Set global JS variables for batch size, num_scenarios, lr (for summary table)
+        window.demoBatchSize = 1;
+        window.demoNumScenarios = 5;
+        window.demoLR = 0.001;
+
+        async function runScript(mode, role = null) {
+            const train_dir = document.getElementById('train_dir').value;
+            const val_dir = document.getElementById('val_dir').value;
+            const test_dir = document.getElementById('test_dir').value;
+            const batch_size = parseInt(document.getElementById('batch_size').value);
+            const num_scenarios = parseInt(document.getElementById('num_scenarios').value);
+            const epochs = parseInt(document.getElementById('epochs').value);
+            const lr = parseFloat(document.getElementById('lr').value);
+
+            const payload = {
+                mode: mode,
+                train_dir: train_dir,
+                val_dir: val_dir,
+                test_dir: test_dir,
+                batch_size: batch_size,
+                num_scenarios: num_scenarios,
+                epochs: epochs,
+                lr: lr,
+                role: role
+            };
+
+            displayMessage('Starting script...', 'info');
+            try {
+                const response = await fetch('/run_script', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                const result = await response.json();
+                if (result.status === 'started') {
+                    displayMessage(result.message + ' Check your backend console for detailed output.', 'success');
+                } else {
+                    displayMessage('Error: ' + result.message, 'error');
+                }
+            } catch (error) {
+                displayMessage('Network error: ' + error.message, 'error');
+            }
+        }
+
+        function runCentralizedTrain() {
+            runScript('centralized');
+        }
+
+        function runFederatedTrainServer() {
+            runScript('federated', 'server');
+        }
+
+        function runFederatedTrainClient() {
+            runScript('federated', 'client');
+        }
+
+        function runTest(modelType) {
+            runScript('test', null); // The backend will handle which model to test based on existing files
+        }
+
+        function displayMessage(message, type) {
+            const outputDiv = document.getElementById('output_message');
+            outputDiv.textContent = message;
+            outputDiv.className = ''; // Clear existing classes
+            outputDiv.classList.add('message', type);
+            outputDiv.style.display = 'block';
+            if (type === 'error') {
+                outputDiv.style.backgroundColor = '#f8d7da';
+                outputDiv.style.borderColor = '#f5c6cb';
+                outputDiv.style.color = '#721c24';
+            } else if (type === 'success') {
+                outputDiv.style.backgroundColor = '#d4edda';
+                outputDiv.style.borderColor = '#c3e6cb';
+                outputDiv.style.color = '#155724';
+            } else { // info
+                outputDiv.style.backgroundColor = '#e7f3fe';
+                outputDiv.style.borderColor = '#cce7ff';
+                outputDiv.style.color = '#004085';
+            }
+        }
+
+        async function loadMetricsAndCharts() {
+            // Centralized Metrics
+            try {
+                const response = await fetch('/get_history/centralized');
+                const result = await response.json();
+                if (result.status === 'success') {
+                    const data = result.history;
+                    if (data.length > 0) {
+                        const lastEpoch = data[data.length - 1];
+                        document.getElementById('centralized_test_loss').textContent = lastEpoch.val_loss ? lastEpoch.val_loss.toFixed(4) : 'N/A';
+                        document.getElementById('summary_centralized_loss').textContent = lastEpoch.val_loss ? lastEpoch.val_loss.toFixed(4) : 'N/A';
+                        document.getElementById('summary_centralized_epochs').textContent = data.length;
+
+                        const trainLosses = data.map(item => item.train_loss);
+                        const valLosses = data.map(item => item.val_loss);
+                        renderChart('centralizedTrainingChart', trainLosses, valLosses, 'Epoch');
+                    } else {
+                        document.getElementById('centralized_test_loss').textContent = 'N/A';
+                        document.getElementById('summary_centralized_loss').textContent = 'N/A';
+                        document.getElementById('summary_centralized_epochs').textContent = 'N/A';
+                    }
+                } else {
+                    console.error('Error loading centralized history:', result.message);
+                    document.getElementById('centralized_test_loss').textContent = 'N/A';
+                    document.getElementById('summary_centralized_loss').textContent = 'N/A';
+                    document.getElementById('summary_centralized_epochs').textContent = 'N/A';
+                }
+            } catch (error) {
+                console.error('Network error loading centralized history:', error);
+                document.getElementById('centralized_test_loss').textContent = 'N/A';
+                document.getElementById('summary_centralized_loss').textContent = 'N/A';
+                document.getElementById('summary_centralized_epochs').textContent = 'N/A';
+            }
+
+            // Federated Metrics
+            try {
+                const response = await fetch('/get_history/federated');
+                const result = await response.json();
+                if (result.status === 'success') {
+                    const data = result.history;
+                    if (data.length > 0) {
+                        const lastRound = data[data.length - 1];
+                        document.getElementById('federated_test_loss').textContent = lastRound.test_loss ? lastRound.test_loss.toFixed(4) : 'N/A';
+                        document.getElementById('summary_federated_loss').textContent = lastRound.test_loss ? lastRound.test_loss.toFixed(4) : 'N/A';
+                        document.getElementById('summary_federated_rounds').textContent = data.length;
+
+                        const trainLosses = data.map(item => item.train_loss);
+                        const valLosses = data.map(item => item.test_loss); // Assuming test_loss is equivalent to val_loss for federated
+                        renderChart('federatedTrainingChart', trainLosses, valLosses, 'Round');
+                    } else {
+                        document.getElementById('federated_test_loss').textContent = 'N/A';
+                        document.getElementById('summary_federated_loss').textContent = 'N/A';
+                        document.getElementById('summary_federated_rounds').textContent = 'N/A';
+                    }
+                } else {
+                    console.error('Error loading federated history:', result.message);
+                    document.getElementById('federated_test_loss').textContent = 'N/A';
+                    document.getElementById('summary_federated_loss').textContent = 'N/A';
+                    document.getElementById('summary_federated_rounds').textContent = 'N/A';
+                }
+            } catch (error) {
+                console.error('Network error loading federated history:', error);
+                document.getElementById('federated_test_loss').textContent = 'N/A';
+                document.getElementById('summary_federated_loss').textContent = 'N/A';
+                document.getElementById('summary_federated_rounds').textContent = 'N/A';
+            }
+
+            // Training time (estimate from performance.now)
+            if (window.performance && window.performance.timing) {
+                // This is a placeholder; ideally, you should save training time in your metrics JSON
+                document.getElementById('summary_centralized_time').textContent = 'See logs';
+                document.getElementById('summary_federated_time').textContent = 'See logs';
+            }
+            // Static values from script (update if you want to pass these dynamically)
+            document.getElementById('summary_batch_size').textContent = document.getElementById('batch_size').value || 'N/A';
+            document.getElementById('summary_num_scenarios').textContent = document.getElementById('num_scenarios').value || 'N/A';
+            document.getElementById('summary_lr').textContent = document.getElementById('lr').value || 'N/A';
+        }
+
+        function renderChart(canvasId, trainLosses, valLosses, labelX, labels = null) {
+            const ctx = document.getElementById(canvasId).getContext('2d');
+            // Destroy existing chart if it exists
+            if (window[canvasId + 'Chart'] instanceof Chart) {
+                window[canvasId + 'Chart'].destroy();
+            }
+
+            if (!labels) {
+                labels = Array.from({length: trainLosses.length}, (_, i) => i + 1);
+            }
+            window[canvasId + 'Chart'] = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Training Loss',
+                            data: trainLosses,
+                            borderColor: '#4a4af7',
+                            backgroundColor: 'rgba(74, 74, 247, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        },
+                        {
+                            label: 'Validation/Test Loss',
+                            data: valLosses,
+                            borderColor: '#f74a4a',
+                            backgroundColor: 'rgba(247, 74, 74, 0.2)',
+                            fill: true,
+                            tension: 0.1
+                        }
+                    ].filter(dataset => dataset.data.length > 0)
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: {
+                                display: true,
+                                text: labelX
+                            }
+                        },
+                        y: {
+                            title: {
+                                display: true,
+                                text: 'Loss'
+                            },
+                            suggestedMax: Math.max(...trainLosses, ...valLosses) * 1.1 // Add 10% buffer
+                        }
+                    }
+                }
+            });
+        }
+
+        async function loadVisualizations(modelType) {
+            const staticGallery = document.getElementById(`${modelType}_static_gallery`);
+            const animationGallery = document.getElementById(`${modelType}_animation_gallery`);
+            
+            // Clear previous images
+            staticGallery.innerHTML = '';
+            animationGallery.innerHTML = '';
+
+            try {
+                const response = await fetch(`/get_visualizations/${modelType}`);
+                const result = await response.json();
+                if (result.status === 'success') {
+                    const images = result.images;
+                    images.forEach(imagePath => {
+                        const filename = imagePath.split('/').pop();
+                        const scenarioIdMatch = filename.match(/test_batch_\d+_(\w{8}-\w{4}-\w{4}-\w{4}-\w{12})_prediction\.png/);
+                        const scenarioId = scenarioIdMatch ? scenarioIdMatch[1] : 'Unknown';
+
+                        if (imagePath.endsWith('.png')) {
+                            const staticImgItem = document.createElement('div');
+                            staticImgItem.classList.add('image-item');
+                            const staticImg = document.createElement('img');
+                            staticImg.src = imagePath;
+                            staticImg.alt = `${modelType} Prediction ${scenarioId}`;
+                            staticImgItem.appendChild(staticImg);
+                            staticImgItem.innerHTML += `<p>Scenario: ${scenarioId.substring(0, 8)}...</p>`;
+                            staticGallery.appendChild(staticImgItem);
+                        } else if (imagePath.endsWith('.gif')) {
+                            const animationItem = document.createElement('div');
+                            animationItem.classList.add('image-item');
+                            const animationImg = document.createElement('img');
+                            animationImg.src = imagePath;
+                            animationImg.alt = `${modelType} Animation ${scenarioId}`;
+                            animationItem.appendChild(animationImg);
+                            animationItem.innerHTML += `<p>Scenario: ${scenarioId.substring(0, 8)}...</p>`;
+                            animationGallery.appendChild(animationItem);
+                        }
+                    });
+                } else {
+                    console.error(`Error loading ${modelType} visualizations:`, result.message);
+                    staticGallery.innerHTML = `<p style='color:#b00;'>${result.message}</p>`;
+                    animationGallery.innerHTML = `<p style='color:#b00;'>${result.message}</p>`;
+                }
+            } catch (error) {
+                console.error(`Network error loading ${modelType} visualizations:`, error);
+                staticGallery.innerHTML = `<p style='color:#b00;'>Error loading visualizations.</p>`;
+                animationGallery.innerHTML = `<p style='color:#b00;'>Error loading visualizations.</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

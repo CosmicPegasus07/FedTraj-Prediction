@@ -1,0 +1,7 @@
+__pycache__/
+dataset/test/*
+dataset/test_small/*
+dataset/train/*
+dataset/train_small/*
+dataset/val/*
+dataset/val_small/*
