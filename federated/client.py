@@ -163,7 +163,7 @@ def main():
     try:
         fl.client.start_client(
             server_address="127.0.0.1:8080",  # IPv6 address that also accepts IPv4
-            client=client,
+            client=client.to_client(),
             transport="grpc-bidi"
         )
         print("[Client] Training completed successfully")

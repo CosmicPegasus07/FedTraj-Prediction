@@ -6,6 +6,24 @@ from collections import OrderedDict
 import json
 import os
 
+def weighted_average(metrics):
+    """Aggregate metrics manually."""
+    # Multiply each metric by the number of examples
+    weighted_metrics = [(num_examples, m) for num_examples, m in metrics]
+    
+    # Aggregate loss
+    losses = [num_examples * m["loss"] for num_examples, m in weighted_metrics]
+    total_examples = sum(num_examples for num_examples, _ in weighted_metrics)
+    
+    if total_examples == 0:
+        return {"loss": float("inf")}  # Or handle as you see fit
+        
+    avg_loss = sum(losses) / total_examples
+    
+    # You can add aggregation for other metrics here
+    
+    return {"loss": avg_loss}
+
 def get_on_fit_config_fn(config):
     """Return a function which returns training configurations."""
     def fit_config(server_round: int):
@@ -52,6 +70,8 @@ def main():
         min_evaluate_clients=args.min_clients,
         min_available_clients=args.min_clients,
         on_fit_config_fn=get_on_fit_config_fn(args),
+        fit_metrics_aggregation_fn=weighted_average,
+        evaluate_metrics_aggregation_fn=weighted_average,
         initial_parameters=fl.common.ndarrays_to_parameters([val.cpu().numpy() for val in model.state_dict().values()]),
     )
 
