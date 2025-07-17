@@ -2,9 +2,19 @@ import flwr as fl
 import torch
 import argparse
 from models.gnn import GATv2TrajectoryPredictor
+from models.vectornet import VectorNet # Import VectorNet
 from collections import OrderedDict
 import json
 import os
+from datetime import datetime # Import datetime
+
+def get_model(model_name, in_channels, hidden_channels, out_channels):
+    if model_name == "GATv2":
+        return GATv2TrajectoryPredictor(in_channels, hidden_channels, out_channels)
+    elif model_name == "VectorNet":
+        return VectorNet(in_channels, out_channels, hidden_dim=hidden_channels)
+    else:
+        raise ValueError(f"Unknown model name: {model_name}")
 
 def weighted_average(metrics):
     """Aggregate metrics manually."""
@@ -20,9 +30,16 @@ def weighted_average(metrics):
         
     avg_loss = sum(losses) / total_examples
     
-    # You can add aggregation for other metrics here
+    # Aggregate new metrics
+    min_ade_k1s = [num_examples * m["min_ade_k1"] for num_examples, m in weighted_metrics]
+    min_fde_k1s = [num_examples * m["min_fde_k1"] for num_examples, m in weighted_metrics]
+    mr_2ms = [num_examples * m["mr_2m"] for num_examples, m in weighted_metrics]
+
+    avg_min_ade_k1 = sum(min_ade_k1s) / total_examples
+    avg_min_fde_k1 = sum(min_fde_k1s) / total_examples
+    avg_mr_2m = sum(mr_2ms) / total_examples
     
-    return {"loss": avg_loss}
+    return {"loss": avg_loss, "min_ade_k1": avg_min_ade_k1, "min_fde_k1": avg_min_fde_k1, "mr_2m": avg_mr_2m}
 
 def get_on_fit_config_fn(config):
     """Return a function which returns training configurations."""
@@ -46,6 +63,7 @@ def main():
     parser.add_argument("--lr", type=float, default=1e-3, help="Learning rate for clients.")
     parser.add_argument("--min_clients", type=int, default=2, help="Minimum number of clients.")
     parser.add_argument("--client_epochs", type=int, default=1, help="Number of epochs for client training.")
+    parser.add_argument("--model_name", type=str, default="GATv2", help="Model to use: GATv2 or VectorNet")
     args = parser.parse_args()
 
     # Create results directory
@@ -56,9 +74,8 @@ def main():
     print(f"[INFO] Number of rounds: {args.rounds}")
     
     # Define model for parameter initialization
-    model = GATv2TrajectoryPredictor(in_channels=5, hidden_channels=32, out_channels=2)
-    model_name = GATv2TrajectoryPredictor.__name__
-    model_path = f"saved_models/federated_model_{model_name}.pt"
+    model = get_model(args.model_name, in_channels=5, hidden_channels=32, out_channels=2)
+    model_path = f"saved_models/federated_model_{args.model_name}.pt"
     if os.path.exists(model_path):
         model.load_state_dict(torch.load(model_path))
         print(f"[INFO] Loaded existing model from {model_path}")
@@ -93,15 +110,38 @@ def main():
         
         # Save federated training history if available
         if hasattr(history, 'losses_distributed') and history.losses_distributed:
-            federated_history = {
-                "losses_distributed": history.losses_distributed,
-                "metrics_distributed": getattr(history, 'metrics_distributed', []),
-                "losses_centralized": getattr(history, 'losses_centralized', []),
-                "metrics_centralized": getattr(history, 'metrics_centralized', []),
+            # Extract final aggregated metrics from the last round
+            final_metrics = {}
+            if history.metrics_distributed:
+                for metric_name, metric_values_list in history.metrics_distributed.items():
+                    if metric_values_list: # Ensure the list is not empty
+                        final_metrics[metric_name] = metric_values_list[-1][1] # Get the value from the last tuple
+
+            history_path = os.path.join("results", "federated_training_history.json")
+            
+            # Load existing history or initialize an empty list
+            all_histories = []
+            if os.path.exists(history_path):
+                with open(history_path, 'r') as f:
+                    try:
+                        all_histories = json.load(f)
+                    except json.JSONDecodeError: # Handle empty or malformed JSON
+                        all_histories = []
+
+            # Append current run's history with metadata and final metrics
+            run_metadata = {
+                "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                "model_name": args.model_name, # Use args.model_name here
+                "rounds_trained": args.rounds,
+                "client_epochs": args.client_epochs,
+                "final_loss": history.losses_distributed[-1][1] if history.losses_distributed else None,
+                "final_metrics": final_metrics
             }
-            with open("results/federated_training_history.json", "w") as f:
-                json.dump(federated_history, f, indent=4)
-            print("[INFO] Federated training history saved to results/federated_training_history.json")
+            all_histories.append(run_metadata)
+
+            with open(history_path, 'w') as f:
+                json.dump(all_histories, f, indent=4)
+            print(f"[INFO] Federated training history saved to {history_path}")
             print(f"[INFO] Final aggregated loss: {history.losses_distributed[-1][1] if history.losses_distributed else 'N/A'}")
         
         # Save the final model if parameters are available

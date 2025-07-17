@@ -26,8 +26,9 @@ def run_script():
     epochs = data.get('epochs', 5)
     lr = data.get('lr', 1e-3)
     role = data.get('role')
+    model_name = data.get('model_name', 'GATv2') # Get model_name
 
-    cmd = ["python", os.path.join(BASE_DIR, "train.py"), "--mode", mode]
+    cmd = ["python", os.path.join(BASE_DIR, "train.py"), "--mode", mode, "--model_name", model_name]
 
     if mode == 'centralized':
         if train_dir:
@@ -84,19 +85,19 @@ def get_history(history_type):
     else:
         return jsonify({"status": "error", "message": f"History file not found: {history_path}"}), 404
 
-@app.route('/get_visualizations/<model_type>', methods=['GET'])
-def get_visualizations(model_type):
-    if model_type == 'centralized':
-        viz_dir = os.path.join(RESULTS_DIR, 'test_predictions', 'centralized')
-    elif model_type == 'federated':
-        viz_dir = os.path.join(RESULTS_DIR, 'test_predictions', 'federated')
+@app.route('/get_visualizations/<training_type>/<model_name>', methods=['GET'])
+def get_visualizations(training_type, model_name):
+    if training_type == 'centralized':
+        viz_dir = os.path.join(RESULTS_DIR, 'test_predictions', 'centralized', model_name)
+    elif training_type == 'federated':
+        viz_dir = os.path.join(RESULTS_DIR, 'test_predictions', 'federated', model_name)
     else:
-        return jsonify({"status": "error", "message": "Invalid model type"}), 400
+        return jsonify({"status": "error", "message": "Invalid training type"}), 400
 
     if os.path.exists(viz_dir):
         images = [f for f in os.listdir(viz_dir) if f.endswith(('.png', '.jpg', '.jpeg', '.gif'))]
         # Return relative paths for web access
-        image_paths = [os.path.join('results', 'test_predictions', model_type, img).replace('\\', '/') for img in images]
+        image_paths = [os.path.join('results', 'test_predictions', training_type, model_name, img).replace('\\', '/') for img in images]
         return jsonify({"status": "success", "images": image_paths})
     else:
         return jsonify({"status": "error", "message": f"Visualization directory not found: {viz_dir}"}), 404

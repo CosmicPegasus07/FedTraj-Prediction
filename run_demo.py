@@ -6,8 +6,9 @@ import sys
 
 # Import functions directly
 from train import centralized_train, centralized_test, federated_test
-from federated.server import main as server_main
-from federated.client import main as client_main
+# The server and client main functions are called via subprocess, so direct import is not strictly needed
+# from federated.server import main as server_main
+# from federated.client import main as client_main
 
 def run_command_in_new_window(command, wait=True):
     process = subprocess.Popen(f'start cmd /k {command}', shell=True)
@@ -22,6 +23,9 @@ def get_input(prompt, default):
 
 def main():
     # Interactive prompts
+    model_choice = get_input("Select model: [1] GATv2, [2] VectorNet", "1")
+    model_name = "GATv2" if model_choice == "1" else "VectorNet"
+
     run_mode = get_input("Select mode: [1] Federated, [2] Centralized, [3] Both", "1")
 
     # Federated options
@@ -57,7 +61,7 @@ def main():
     # Parameters for testing
     if run_federated_test or run_centralized_test:
         test_dir = get_input("Test directory", "dataset/test_small")
-        visualize_limit = int(get_input("How many test samples to visualize?", 5))
+        visualize_limit = int(get_input("How many test samples to visualize?", 2))
 
     # Shared parameters
     if run_federated_train or run_centralized_train or run_federated_test or run_centralized_test:
@@ -67,7 +71,7 @@ def main():
     # --- Federated Learning --- #
     if run_federated_train:
         print("[INFO] Starting federated learning simulation...")
-        server_cmd = f"python -m federated.server --rounds {num_rounds} --client_epochs {client_epochs}"
+        server_cmd = f"python -m federated.server --rounds {num_rounds} --client_epochs {client_epochs} --model_name {model_name}"
         server_process = run_command_in_new_window(server_cmd, wait=False)
         print("[INFO] Server started. Waiting for clients...")
         time.sleep(20) # Give server more time to start
@@ -76,7 +80,7 @@ def main():
             client_cmd = (
                 f"python -m federated.client --train_dir {train_dir} --val_dir {val_dir} "
                 f"--num_scenarios {num_scenarios} --batch_size {batch_size} "
-                f"--client_id {i} --num_clients {num_clients}"
+                f"--client_id {i} --num_clients {num_clients} --model_name {model_name}"
             )
             client_processes.append(run_command_in_new_window(client_cmd, wait=False))
             print(f"[INFO] Client {i} started.")
@@ -92,6 +96,7 @@ def main():
     if run_centralized_train:
         print("\n[INFO] Starting centralized training for comparison...")
         centralized_train(
+            model_name=model_name,
             train_dir=train_dir,
             val_dir=val_dir,
             batch_size=batch_size,
@@ -105,6 +110,7 @@ def main():
     if run_centralized_test:
         print("\n[INFO] Running centralized model testing and visualization...")
         centralized_test(
+            model_name=model_name,
             test_dir=test_dir,
             batch_size=batch_size,
             num_scenarios=num_scenarios,
@@ -115,6 +121,7 @@ def main():
     if run_federated_test:
         print("\n[INFO] Running federated model testing and visualization...")
         federated_test(
+            model_name=model_name,
             test_dir=test_dir,
             batch_size=batch_size,
             num_scenarios=num_scenarios,

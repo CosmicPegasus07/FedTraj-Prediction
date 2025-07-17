@@ -1,0 +1,34 @@
+[
+    {
+        "timestamp": "2025-07-17 22:37:49",
+        "model_name": "GATv2",
+        "test_loss": 22735.327034580707,
+        "test_min_ade_k1": 162.0493191242218,
+        "test_min_fde_k1": 162.0493191242218,
+        "test_mr_2m": 0.8
+    },
+    {
+        "timestamp": "2025-07-17 22:39:49",
+        "model_name": "VectorNet",
+        "test_loss": 1680.4790706634521,
+        "test_min_ade_k1": 47.060955905914305,
+        "test_min_fde_k1": 47.060955905914305,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-17 23:16:52",
+        "model_name": "GATv2",
+        "test_loss": 64873.30965385437,
+        "test_min_ade_k1": 273.7008460998535,
+        "test_min_fde_k1": 273.7008460998535,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-17 23:17:22",
+        "model_name": "VectorNet",
+        "test_loss": 7096.630953979492,
+        "test_min_ade_k1": 95.56269512176513,
+        "test_min_fde_k1": 95.56269512176513,
+        "test_mr_2m": 1.0
+    }
+]

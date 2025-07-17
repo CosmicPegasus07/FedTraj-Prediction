@@ -1,3 +1,18 @@
-{
-    "test_loss": 10085914.536764706
-}
+[
+    {
+        "timestamp": "2025-07-17 23:15:45",
+        "model_name": "GATv2",
+        "test_loss": 21384.83366088867,
+        "test_min_ade_k1": 168.61410369873047,
+        "test_min_fde_k1": 168.61410369873047,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-17 23:16:15",
+        "model_name": "VectorNet",
+        "test_loss": 2643.925443649292,
+        "test_min_ade_k1": 60.145027828216556,
+        "test_min_fde_k1": 60.145027828216556,
+        "test_mr_2m": 1.0
+    }
+]

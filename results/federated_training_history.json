@@ -1,34 +1,67 @@
-{
-    "losses_distributed": [
-        [
-            1,
-            4321426.0
-        ],
-        [
-            2,
-            899774.3125
-        ],
-        [
-            3,
-            341782.671875
-        ]
-    ],
-    "metrics_distributed": {
-        "loss": [
-            [
-                1,
-                4321425.8375
-            ],
-            [
-                2,
-                899774.3234375
-            ],
-            [
-                3,
-                341782.683203125
-            ]
-        ]
+[
+    {
+        "timestamp": "2025-07-17 22:42:20",
+        "model_name": "GATv2",
+        "rounds_trained": 3,
+        "client_epochs": 1,
+        "final_loss": 16381646.0,
+        "final_metrics": {
+            "loss": 16381645.766796876,
+            "min_ade_k1": 4255.209906005859,
+            "min_fde_k1": 4255.209906005859,
+            "mr_2m": 1.0
+        }
     },
-    "losses_centralized": [],
-    "metrics_centralized": {}
-}
+    {
+        "timestamp": "2025-07-17 22:43:02",
+        "model_name": "GATv2",
+        "rounds_trained": 3,
+        "client_epochs": 1,
+        "final_loss": 14921219.0,
+        "final_metrics": {
+            "loss": 14921219.412109375,
+            "min_ade_k1": 4073.5505950927736,
+            "min_fde_k1": 4073.5505950927736,
+            "mr_2m": 1.0
+        }
+    },
+    {
+        "timestamp": "2025-07-17 22:56:00",
+        "model_name": "GATv2",
+        "rounds_trained": 3,
+        "client_epochs": 1,
+        "final_loss": 12096009.0,
+        "final_metrics": {
+            "loss": 12096008.748046875,
+            "min_ade_k1": 3693.8443908691406,
+            "min_fde_k1": 3693.8443908691406,
+            "mr_2m": 1.0
+        }
+    },
+    {
+        "timestamp": "2025-07-17 23:13:45",
+        "model_name": "GATv2",
+        "rounds_trained": 3,
+        "client_epochs": 1,
+        "final_loss": 14204966.0,
+        "final_metrics": {
+            "loss": 14204966.23203125,
+            "min_ade_k1": 3974.322396850586,
+            "min_fde_k1": 3974.322396850586,
+            "mr_2m": 1.0
+        }
+    },
+    {
+        "timestamp": "2025-07-17 23:15:02",
+        "model_name": "VectorNet",
+        "rounds_trained": 3,
+        "client_epochs": 1,
+        "final_loss": 14290850.0,
+        "final_metrics": {
+            "loss": 14290849.55546875,
+            "min_ade_k1": 3986.9872985839843,
+            "min_fde_k1": 3986.9872985839843,
+            "mr_2m": 1.0
+        }
+    }
+]
