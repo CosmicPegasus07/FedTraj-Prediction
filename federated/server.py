@@ -1,7 +1,7 @@
 import flwr as fl
 import torch
 import argparse
-from models.gnn import GATTrajectoryPredictor
+from models.gnn import GATv2TrajectoryPredictor
 from collections import OrderedDict
 import json
 import os
@@ -56,8 +56,9 @@ def main():
     print(f"[INFO] Number of rounds: {args.rounds}")
     
     # Define model for parameter initialization
-    model = GATTrajectoryPredictor(in_channels=5, hidden_channels=32, out_channels=2)
-    model_path = "federated_model.pt"
+    model = GATv2TrajectoryPredictor(in_channels=5, hidden_channels=32, out_channels=2)
+    model_name = GATv2TrajectoryPredictor.__name__
+    model_path = f"saved_models/federated_model_{model_name}.pt"
     if os.path.exists(model_path):
         model.load_state_dict(torch.load(model_path))
         print(f"[INFO] Loaded existing model from {model_path}")

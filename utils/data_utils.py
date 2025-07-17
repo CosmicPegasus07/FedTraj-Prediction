@@ -10,7 +10,7 @@ import numpy as np
 import random
 import warnings
 
-def get_scenario_file_list(scenario_dir, num_scenarios=-1, selection_criteria="first"):
+def get_scenario_file_list(scenario_dir, num_scenarios=-1, selection_criteria="first", client_id=None, num_clients=None):
     """
     Gets a list of scenario parquet files from a directory.
     - num_scenarios: Number of scenarios to load. -1 means all.
@@ -26,6 +26,12 @@ def get_scenario_file_list(scenario_dir, num_scenarios=-1, selection_criteria="f
             selected_folders = random.sample(scenario_folders, min(num_scenarios, len(scenario_folders)))
     else:
         selected_folders = scenario_folders
+
+    if client_id is not None and num_clients is not None:
+        files_per_client = len(selected_folders) // num_clients
+        start_index = client_id * files_per_client
+        end_index = start_index + files_per_client if client_id < num_clients - 1 else len(selected_folders)
+        selected_folders = selected_folders[start_index:end_index]
 
     scenario_files = []
     for folder in selected_folders:
@@ -142,11 +148,11 @@ def custom_collate(batch):
     
     return collated_batch
 
-def get_pyg_data_loader(scenario_dir, batch_size=32, num_scenarios=-1, selection_criteria="first", shuffle=True, mode='train'):
+def get_pyg_data_loader(scenario_dir, batch_size=32, num_scenarios=-1, selection_criteria="first", shuffle=True, mode='train', client_id=None, num_clients=None):
     """
     Creates a PyG DataLoader for the Argoverse dataset.
     """
-    scenario_files = get_scenario_file_list(scenario_dir, num_scenarios, selection_criteria)
+    scenario_files = get_scenario_file_list(scenario_dir, num_scenarios, selection_criteria, client_id, num_clients)
     
     is_test = (mode == 'test')
     dataset = ArgoversePyGDataset(scenario_files, is_test=is_test)

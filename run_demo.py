@@ -75,7 +75,8 @@ def main():
         for i in range(num_clients):
             client_cmd = (
                 f"python -m federated.client --train_dir {train_dir} --val_dir {val_dir} "
-                f"--num_scenarios {num_scenarios} --batch_size {batch_size}"
+                f"--num_scenarios {num_scenarios} --batch_size {batch_size} "
+                f"--client_id {i} --num_clients {num_clients}"
             )
             client_processes.append(run_command_in_new_window(client_cmd, wait=False))
             print(f"[INFO] Client {i} started.")

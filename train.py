@@ -2,7 +2,7 @@ import argparse
 import os
 import torch
 import json # Import json module
-from models.gnn import GATTrajectoryPredictor
+from models.gnn import GATv2TrajectoryPredictor
 from utils.data_utils import get_pyg_data_loader
 from utils.viz_utils import visualize_predictions # Import the function
 
@@ -50,9 +50,10 @@ def centralized_train(train_dir, val_dir, batch_size=32, num_scenarios=-1, epoch
     print(f"[INFO] Loaded {len(train_loader.dataset)} train samples and {len(val_loader.dataset)} val samples.")
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = GATTrajectoryPredictor(in_channels=5, hidden_channels=32, out_channels=2).to(device)
+    model = GATv2TrajectoryPredictor(in_channels=5, hidden_channels=32, out_channels=2).to(device)
 
-    model_path = "centralized_model.pt"
+    model_name = GATv2TrajectoryPredictor.__name__
+    model_path = f"saved_models/centralized_model_{model_name}.pt"
     if os.path.exists(model_path):
         model.load_state_dict(torch.load(model_path))
         print(f"[INFO] Loaded existing model from {model_path}")
@@ -100,8 +101,10 @@ def centralized_train(train_dir, val_dir, batch_size=32, num_scenarios=-1, epoch
         })
 
     print("[INFO] Centralized training complete.")
-    torch.save(model.state_dict(), "centralized_model.pt")
-    print("[INFO] Model saved as centralized_model.pt")
+    model_name = model.__class__.__name__
+    model_path = f"saved_models/centralized_model_{model_name}.pt"
+    torch.save(model.state_dict(), model_path)
+    print(f"[INFO] Model saved as {model_path}")
 
     # Save training history to JSON
     results_dir = "results"
@@ -130,9 +133,10 @@ def centralized_test(test_dir, batch_size=32, num_scenarios=-1, visualize_limit=
     print(f"[INFO] Loaded {len(test_loader.dataset)} test samples.")
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = GATTrajectoryPredictor(in_channels=5, hidden_channels=32, out_channels=2).to(device)
+    model = GATv2TrajectoryPredictor(in_channels=5, hidden_channels=32, out_channels=2).to(device)
     
-    model_path = "centralized_model.pt"
+    model_name = GATv2TrajectoryPredictor.__name__
+    model_path = f"saved_models/centralized_model_{model_name}.pt"
     if not os.path.exists(model_path):
         print(f"[ERROR] Model file not found at {model_path}. Please train the model first.")
         return
@@ -149,18 +153,16 @@ def centralized_test(test_dir, batch_size=32, num_scenarios=-1, visualize_limit=
     save_dir = os.path.join("results", "test_predictions", "centralized")
     os.makedirs(save_dir, exist_ok=True)
 
-    # Iterate through a few batches (or all) for visualization
-    for batch_idx, batch in enumerate(test_loader):
-        # You might want to limit the number of visualizations if your test set is huge
-        if batch_idx >= visualize_limit: # Visualize only the first N batches, adjust as needed
-            break 
+    # Iterate through the test loader for visualization, but with batch_size=1 for simplicity
+    vis_loader = get_pyg_data_loader(test_dir, batch_size=1, num_scenarios=visualize_limit, shuffle=False, mode='test')
+    for batch_idx, batch in enumerate(vis_loader):
         visualize_predictions(
             batch=batch, 
             model=model, 
             device=device, 
-            save_dir=save_dir, # Create a specific directory for test results
-            prefix=f"test_batch_{batch_idx}_",
-            is_test_mode=True # Indicate that it's test mode to skip ground truth target
+            save_dir=save_dir,
+            prefix=f"test_sample_{batch_idx}_",
+            is_test_mode=True
         )
     print(f"[INFO] Visualizations complete. Check '{save_dir}' folder.")
     
@@ -181,9 +183,9 @@ def federated_test(test_dir, batch_size=32, num_scenarios=-1, visualize_limit=5)
     print(f"[INFO] Loaded {len(test_loader.dataset)} test samples.")
     
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    model = GATTrajectoryPredictor(in_channels=5, hidden_channels=32, out_channels=2).to(device)
-    
-    model_path = "federated_model.pt"
+    model = GATv2TrajectoryPredictor(in_channels=5, hidden_channels=32, out_channels=2).to(device)
+    model_name = GATv2TrajectoryPredictor.__name__
+    model_path = f"saved_models/federated_model_{model_name}.pt"
     if not os.path.exists(model_path):
         print(f"[ERROR] Model file not found at {model_path}. Please run federated training first.")
         return
@@ -206,15 +208,14 @@ def federated_test(test_dir, batch_size=32, num_scenarios=-1, visualize_limit=5)
     save_dir = "results/test_predictions/federated"
     os.makedirs(save_dir, exist_ok=True)
 
-    for batch_idx, batch in enumerate(test_loader):
-        if batch_idx >= visualize_limit:
-            break 
+    vis_loader = get_pyg_data_loader(test_dir, batch_size=1, num_scenarios=visualize_limit, shuffle=False, mode='test')
+    for batch_idx, batch in enumerate(vis_loader):
         visualize_predictions(
             batch=batch, 
             model=model, 
             device=device, 
             save_dir=save_dir,
-            prefix=f"test_batch_{batch_idx}_",
+            prefix=f"test_sample_{batch_idx}_",
             is_test_mode=True
         )
     print(f"[INFO] Visualizations complete. Check '{save_dir}' folder.")

@@ -43,9 +43,8 @@ The project uses the Argoverse 2 dataset and a Graph Attention Network (GAT) to 
 ```
 .
 ├── app.py                  # Flask web application
-├── centralized_model.pt    # Saved centralized model
-├── federated_model.pt      # Saved federated model
 ├── README.md               # This file
+├── requirements.txt        # Python package dependencies
 ├── run_demo.py             # Command-line demo script
 ├── train.py                # Centralized training and testing
 ├── dataset/                # Argoverse 2 dataset
@@ -58,6 +57,8 @@ The project uses the Argoverse 2 dataset and a Graph Attention Network (GAT) to 
 │   ├── centralized_training_history.json
 │   ├── federated_training_history.json
 │   └── test_predictions/   # Saved prediction visualizations
+├── saved_models/
+│   ├── *.pt              # Saved model files
 ├── utils/
 │   ├── data_utils.py       # Data loading and preprocessing
 │   └── viz_utils.py        # Visualization utilities

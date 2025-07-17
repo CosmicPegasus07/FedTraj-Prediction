@@ -2,7 +2,7 @@ import flwr as fl
 import torch
 import argparse
 import os
-from models.gnn import GATTrajectoryPredictor
+from models.gnn import GATv2TrajectoryPredictor
 from utils.data_utils import get_pyg_data_loader
 from collections import OrderedDict
 import time
@@ -39,7 +39,7 @@ class FlowerClient(fl.client.NumPyClient):
             print(f"[Client] Round {current_round}, LR: {learning_rate}, Epochs: {epochs}")
             
             # Train for the specified number of epochs
-            loss = train(self.model, self.trainloader, epochs=epochs, lr=learning_rate, device=self.device)
+            loss = train(self.model, self.trainloader, self.valloader, epochs=epochs, lr=learning_rate, device=self.device)
             
             print(f"[Client] Fit round completed. Loss: {loss:.4f}")
             return self.get_parameters(config={}), len(self.trainloader.dataset), {"loss": loss}
@@ -56,14 +56,16 @@ class FlowerClient(fl.client.NumPyClient):
             print(f"[Client] Evaluate completed. Loss: {loss:.4f}")
             # Save the model after the final round if indicated by config
             if config.get("current_round", 1) == config.get("total_rounds", 1):
-                print("[Client] Final round detected. Saving federated model as 'federated_model.pt'.")
-                torch.save(self.model.state_dict(), "federated_model.pt")
+                model_name = self.model.__class__.__name__
+                model_path = f"saved_models/federated_model_{model_name}.pt"
+                print(f"[Client] Final round detected. Saving federated model as '{model_path}'.")
+                torch.save(self.model.state_dict(), model_path)
             return float(loss), len(self.valloader.dataset), {"loss": float(loss)}
         except Exception as e:
             print(f"[Client ERROR] Evaluate failed: {e}")
             raise
 
-def train(model, trainloader, epochs, lr, device):
+def train(model, trainloader, valloader, epochs, lr, device):
     """Train the model on the training set."""
     criterion = torch.nn.MSELoss()
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
@@ -94,10 +96,10 @@ def train(model, trainloader, epochs, lr, device):
             except Exception as e:
                 print(f"[Client ERROR] Training batch {batch_idx} failed: {e}")
                 continue
-                
-        avg_epoch_loss = epoch_loss / batches if batches > 0 else float('inf')
-        print(f"[Client] Epoch {epoch + 1}/{epochs} completed. Average loss: {avg_epoch_loss:.4f}")
-        total_loss += avg_epoch_loss
+        
+        val_loss = test(model, valloader, device)
+        print(f"[Client] Epoch {epoch + 1}/{epochs} completed. Average loss: {epoch_loss / batches if batches > 0 else float('inf'):.4f}, Val Loss: {val_loss:.4f}")
+        total_loss += epoch_loss / batches if batches > 0 else float('inf')
         
     return total_loss / epochs if epochs > 0 else float('inf')
 
@@ -132,6 +134,8 @@ def main():
     parser.add_argument("--val_dir", type=str, required=True, help="Directory with validation scenario folders")
     parser.add_argument("--num_scenarios", type=int, default=-1, help="Number of scenarios to load (-1 for all)")
     parser.add_argument("--batch_size", type=int, default=32, help="Batch size for training")
+    parser.add_argument("--client_id", type=int, required=True, help="Client ID")
+    parser.add_argument("--num_clients", type=int, required=True, help="Total number of clients")
     args = parser.parse_args()
 
     # Set up device
@@ -139,12 +143,13 @@ def main():
     print(f"[Client] Using device: {device}")
 
     # Initialize model
-    model = GATTrajectoryPredictor(in_channels=5, hidden_channels=32, out_channels=2).to(device)
+    model = GATv2TrajectoryPredictor(in_channels=5, hidden_channels=32, out_channels=2).to(device)
     
     # Load data
     print(f"[Client] Loading data from {args.train_dir} and {args.val_dir}")
     train_loader = get_pyg_data_loader(args.train_dir, batch_size=args.batch_size, 
-                                     num_scenarios=args.num_scenarios, shuffle=True, mode='train')
+                                     num_scenarios=args.num_scenarios, shuffle=True, mode='train', 
+                                     client_id=args.client_id, num_clients=args.num_clients)
     val_loader = get_pyg_data_loader(args.val_dir, batch_size=args.batch_size, 
                                    num_scenarios=args.num_scenarios, shuffle=False, mode='val')
 
@@ -162,7 +167,7 @@ def main():
     
     try:
         fl.client.start_client(
-            server_address="127.0.0.1:8080",  # IPv6 address that also accepts IPv4
+            server_address="127.0.0.1:8080",
             client=client.to_client(),
             transport="grpc-bidi"
         )
