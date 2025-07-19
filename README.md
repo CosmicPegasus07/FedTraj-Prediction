@@ -2,6 +2,11 @@
 
 This project implements and compares centralized and federated learning approaches for multi-vehicle trajectory forecasting using Graph Neural Networks (GNNs). The goal is to predict the future trajectory of a target vehicle based on its past behavior and the behavior of surrounding vehicles.
 
+<p align="center">
+  <img src="results/test_predictions/centralized/GATv2/test_sample_0_animation.gif" alt="Centralized GATv2 Prediction" width="45%">
+  <img src="results/test_predictions/federated/GATv2/test_sample_0_animation.gif" alt="Federated GATv2 Prediction" width="45%">
+</p>
+
 ## Table of Contents
 
 - [Project Overview](#project-overview)
@@ -139,12 +144,6 @@ This project uses the [Argoverse 2 Motion Forecasting Dataset](https://www.argov
 ## Results
 
 The training history and prediction visualizations are saved in the `results/` directory. The web interface provides a convenient way to view these results.
-
-### Centralized Model Prediction Example
-![Centralized GATv2 Prediction](results/test_predictions/centralized/GATv2/test_sample_0_animation.gif)
-
-### Federated Model Prediction Example
-![Federated GATv2 Prediction](results/test_predictions/federated/GATv2/test_sample_0_animation.gif)
 
 ## Contributing
 

@@ -63,5 +63,18 @@
             "min_fde_k1": 3986.9872985839843,
             "mr_2m": 1.0
         }
+    },
+    {
+        "timestamp": "2025-07-18 15:49:10",
+        "model_name": "VectorNet",
+        "rounds_trained": 3,
+        "client_epochs": 10,
+        "final_loss": 545510.03125,
+        "final_metrics": {
+            "loss": 545510.03125,
+            "min_ade_k1": 768.6441242980957,
+            "min_fde_k1": 768.6441242980957,
+            "mr_2m": 1.0
+        }
     }
 ]

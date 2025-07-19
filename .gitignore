@@ -5,3 +5,5 @@ dataset/train/*
 dataset/train_small/*
 dataset/val/*
 dataset/val_small/*
+*.png
+*.gif
