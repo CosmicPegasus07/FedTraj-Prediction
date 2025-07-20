@@ -1,469 +1,1544 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Federated vs. Centralized GNN Trajectory Prediction</title>
+    <title>🚀 Federated vs Centralized Trajectory Prediction Dashboard</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background-color: #f4f4f9; color: #333; }
-        h1, h2 { text-align: center; color: #333; }
-        .container { display: flex; justify-content: space-around; margin-top: 20px; flex-wrap: wrap; }
-        .model-section { background-color: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 10px; flex: 1; min-width: 45%; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-        .model-section h2 { border-bottom: 2px solid #eaeaea; padding-bottom: 10px; margin-bottom: 20px; }
-        .metrics-summary { background-color: #eef; border-left: 4px solid #4a4af7; padding: 10px; margin-bottom: 20px; font-size: 1.1em; }
-        .chart-container { margin-bottom: 30px; }
-        .image-gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 15px; margin-top: 20px; }
-        .image-item { border: 1px solid #eee; border-radius: 5px; overflow: hidden; text-align: center; background-color: #f9f9f9; }
-        .image-item img, .image-item video { max-width: 100%; height: auto; display: block; margin: 0 auto; cursor: pointer; }
-        .image-item p { margin: 10px 0; font-size: 0.9em; color: #555; }
-        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; overflow: auto; background-color: rgba(0,0,0,0.8); }
-        .modal-content { margin: auto; display: block; max-width: 90%; max-height: 90%; object-fit: contain; }
-        .close { position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer; }
-        .tab-container { display: flex; justify-content: center; margin-bottom: 20px; }
-        .tab-button { background-color: #ddd; border: none; padding: 10px 20px; cursor: pointer; font-size: 1em; margin: 0 5px; border-radius: 5px; }
-        .tab-button.active { background-color: #4a4af7; color: white; }
-        .tab-content { display: none; }
-        .tab-content.active { display: block; }
-        .note { color: #b00; background: #fff3cd; border: 1px solid #ffeeba; padding: 10px; border-radius: 5px; margin-bottom: 20px; text-align: center; }
+        :root {
+            --primary-color: #2563eb;
+            --secondary-color: #7c3aed;
+            --success-color: #059669;
+            --warning-color: #d97706;
+            --error-color: #dc2626;
+            --background-color: #f8fafc;
+            --card-background: #ffffff;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --border-color: #e2e8f0;
+            --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--background-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: white;
+            padding: 2rem 0;
+            text-align: center;
+            box-shadow: var(--shadow);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 1rem;
+        }
+
+        .dashboard-nav {
+            background: var(--card-background);
+            border-bottom: 1px solid var(--border-color);
+            padding: 1rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .nav-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .nav-tab {
+            padding: 0.75rem 1.5rem;
+            background: transparent;
+            border: 2px solid var(--border-color);
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .nav-tab:hover {
+            border-color: var(--primary-color);
+            color: var(--primary-color);
+        }
+
+        .nav-tab.active {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .section {
+            display: none;
+            padding: 2rem 0;
+        }
+
+        .section.active {
+            display: block;
+        }
+
+        .card {
+            background: var(--card-background);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: var(--shadow);
+            border: 1px solid var(--border-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .grid {
+            display: grid;
+            gap: 1.5rem;
+        }
+
+        .grid-2 {
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        }
+
+        .grid-3 {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        }
+
+        .grid-4 {
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        }
+
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.5rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1d4ed8;
+        }
+
+        .btn-success {
+            background: var(--success-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #047857;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #b45309;
+        }
+
+        .btn-secondary {
+            background: var(--text-secondary);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            background: #475569;
+        }
+
+        .status-badge {
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .status-running {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .status-completed {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        .status-error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        .metric-card {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .metric-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+
+        .metric-label {
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-top: 0.25rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+            color: var(--text-primary);
+        }
+
+        .form-input,
+        .form-select {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            font-size: 1rem;
+        }
+
+        .form-input:focus,
+        .form-select:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .alert-info {
+            background: #dbeafe;
+            border: 1px solid #93c5fd;
+            color: #1e40af;
+        }
+
+        .alert-success {
+            background: #d1fae5;
+            border: 1px solid #86efac;
+            color: #065f46;
+        }
+
+        .alert-error {
+            background: #fee2e2;
+            border: 1px solid #fca5a5;
+            color: #991b1b;
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin: 1rem 0;
+        }
+
+        .image-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .image-item {
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            overflow: hidden;
+            background: var(--card-background);
+            transition: transform 0.3s ease;
+        }
+
+        .image-item:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+
+        .image-item img {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            cursor: pointer;
+        }
+
+        .image-caption {
+            padding: 0.75rem;
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            max-width: 90%;
+            max-height: 90%;
+            object-fit: contain;
+        }
+
+        .modal-close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .comparison-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        .comparison-table th,
+        .comparison-table td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .comparison-table th {
+            background: var(--background-color);
+            font-weight: 600;
+        }
+
+        .visualization-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .visualization-item {
+            background: white;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .visualization-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .visualization-label {
+            padding: 0.5rem;
+            font-size: 0.875rem;
+            color: #666;
+            text-align: center;
+            background: #f8f9fa;
+        }
+
+        .loading {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .spinner {
+            width: 1rem;
+            height: 1rem;
+            border: 2px solid var(--border-color);
+            border-top: 2px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 2rem;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .grid-2,
+            .grid-3,
+            .grid-4 {
+                grid-template-columns: 1fr;
+            }
+        }
     </style>
 </head>
+
 <body>
-    
-    <h1>GNN Trajectory Prediction: Federated vs. Centralized</h1>
+    <!-- Header -->
+    <div class="header">
+        <div class="container">
+            <h1><i class="fas fa-robot"></i> Federated vs Centralized Trajectory Prediction</h1>
+            <p>Interactive Dashboard for Comparing Machine Learning Approaches</p>
+        </div>
+    </div>
 
-    <div class="controls-section" style="background-color: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin: 20px auto; max-width: 90%; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
-        <h2>Run Experiments</h2>
-        <div style="display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
-            <div style="flex: 1; min-width: 200px;">
-                <label for="train_dir">Train Directory:</label><br>
-                <input type="text" id="train_dir" value="dataset/train_small" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
+    <!-- Navigation -->
+    <div class="dashboard-nav">
+        <div class="container">
+            <div class="nav-tabs">
+                <button class="nav-tab active" onclick="showSection('training')">
+                    <i class="fas fa-play"></i> Training & Testing
+                </button>
+                <button class="nav-tab" onclick="showSection('comparison')">
+                    <i class="fas fa-chart-line"></i> Performance Comparison
+                </button>
+                <button class="nav-tab" onclick="showSection('visualizations')">
+                    <i class="fas fa-images"></i> Visualizations
+                </button>
+
             </div>
-            <div style="flex: 1; min-width: 200px;">
-                <label for="val_dir">Validation Directory:</label><br>
-                <input type="text" id="val_dir" value="dataset/val_small" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
-            </div>
-            <div style="flex: 1; min-width: 200px;">
-                <label for="test_dir">Test Directory:</label><br>
-                <input type="text" id="test_dir" value="dataset/test_small" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
-            </div>
-            <div style="flex: 1; min-width: 100px;">
-                <label for="batch_size">Batch Size:</label><br>
-                <input type="number" id="batch_size" value="32" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
-            </div>
-            <div style="flex: 1; min-width: 100px;">
-                <label for="num_scenarios">Num Scenarios:</label><br>
-                <input type="number" id="num_scenarios" value="10" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
-            </div>
-            <div style="flex: 1; min-width: 100px;">
-                <label for="epochs">Epochs:</label><br>
-                <input type="number" id="epochs" value="5" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
-            </div>
-            <div style="flex: 1; min-width: 100px;">
-                <label for="lr">Learning Rate:</label><br>
-                <input type="number" id="lr" value="0.001" step="0.0001" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;"><br>
-            </div>
-            <div style="flex: 1; min-width: 150px;">
-                <label for="model_select">Select Model:</label><br>
-                <select id="model_select" style="width: 100%; padding: 8px; margin-top: 5px; border: 1px solid #ddd; border-radius: 4px;">
-                    <option value="GATv2">GATv2</option>
-                    <option value="VectorNet">VectorNet</option>
-                </select>
-            </div>
-        </div>
-        <div style="display: flex; justify-content: center; gap: 15px;">
-            <button onclick="runCentralizedTrain()" style="padding: 10px 20px; background-color: #4CAF50; color: white; border: none; border-radius: 5px; cursor: pointer;">Run Centralized Train</button>
-            <button onclick="runFederatedTrainServer()" style="padding: 10px 20px; background-color: #008CBA; color: white; border: none; border-radius: 5px; cursor: pointer;">Run Federated Train (Server)</button>
-            <button onclick="runFederatedTrainClient()" style="padding: 10px 20px; background-color: #f44336; color: white; border: none; border-radius: 5px; cursor: pointer;">Run Federated Train (Client)</button>
-            <button onclick="runTest('centralized')" style="padding: 10px 20px; background-color: #555555; color: white; border: none; border-radius: 5px; cursor: pointer;">Run Centralized Test</button>
-            <button onclick="runTest('federated')" style="padding: 10px 20px; background-color: #555555; color: white; border: none; border-radius: 5px; cursor: pointer;">Run Federated Test</button>
-        </div>
-        <div id="output_message" style="margin-top: 20px; padding: 10px; background-color: #e7f3fe; border: 1px solid #cce7ff; border-radius: 5px; display: none;"></div>
-    </div>
-    <div class="note">
-        <strong>Comparison Summary:</strong><br>
-        <table style="margin: 0 auto; background: #fff; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            <tr style="background:#eef;"><th>Approach</th><th>Final Test Loss</th><th>minADE(K=1)</th><th>minFDE(K=1)</th><th>MR(2.0m)</th><th>Training Time (s)</th><th>Rounds/Epochs</th><th>Batch Size</th><th>Num. Scenarios</th><th>Learning Rate</th><th>Data Transfer</th><th>Privacy</th></tr>
-            <tr><td>Centralized</td><td id="summary_centralized_loss">Loading...</td><td id="summary_centralized_minade">Loading...</td><td id="summary_centralized_minfde">Loading...</td><td id="summary_centralized_mr">Loading...</td><td id="summary_centralized_time">Loading...</td><td id="summary_centralized_epochs">Loading...</td><td id="summary_batch_size">Loading...</td><td id="summary_num_scenarios">Loading...</td><td id="summary_lr">Loading...</td><td>All data sent to server</td><td>Low</td></tr>
-            <tr><td>Federated</td><td id="summary_federated_loss">Loading...</td><td id="summary_federated_minade">Loading...</td><td id="summary_federated_minfde">Loading...</td><td id="summary_federated_mr">Loading...</td><td id="summary_federated_time">Loading...</td><td id="summary_federated_rounds">Loading...</td><td id="summary_batch_size">Loading...</td><td id="summary_num_scenarios">Loading...</td><td id="summary_lr">Loading...</td><td>No raw data shared</td><td>High</td></tr>
-        </table>
-        <div style="margin-top:10px; font-size:1.05em;">
-            <strong>Insight:</strong> Federated learning achieves comparable performance to centralized training, <span style="color:#4a4af7;">without sharing raw data</span>. This enables privacy-preserving, distributed model training.
         </div>
     </div>
+
     <div class="container">
-        <!-- Federated Model Section -->
-        <div class="model-section" id="federated">
-            <h2>Federated Model</h2>
-            <div class="metrics-summary">
-                <strong>Final Test Loss:</strong> <span id="federated_test_loss">Loading...</span><br>
-                <strong>minADE(K=1):</strong> <span id="federated_minade_k1">Loading...</span><br>
-                <strong>minFDE(K=1):</strong> <span id="federated_minfde_k1">Loading...</span><br>
-                <strong>MR(2.0m):</strong> <span id="federated_mr_2m">Loading...</span>
+        <!-- Training & Testing Section -->
+        <div id="training" class="section active">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-cogs"></i> Experiment Configuration
+                    </h2>
+                </div>
+
+                <div class="grid grid-4">
+                    <div class="form-group">
+                        <label class="form-label">Model Architecture</label>
+                        <select id="model_select" class="form-select">
+                            <option value="GATv2">GATv2 (Graph Attention)</option>
+                            <option value="VectorNet">VectorNet (Vector-based)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Training Scenarios</label>
+                        <input type="number" id="num_scenarios" class="form-input" value="100" min="10" max="12516">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Batch Size</label>
+                        <input type="number" id="batch_size" class="form-input" value="16" min="1" max="64">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Learning Rate</label>
+                        <input type="number" id="lr" class="form-input" value="0.001" step="0.0001" min="0.0001"
+                            max="0.1">
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Training Directory</label>
+                        <input type="text" id="train_dir" class="form-input" value="dataset/train_small">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Validation Directory</label>
+                        <input type="text" id="val_dir" class="form-input" value="dataset/val_small">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Test Directory</label>
+                        <input type="text" id="test_dir" class="form-input" value="dataset/test_small">
+                    </div>
+                </div>
+
+                <div class="grid grid-3">
+                    <div class="form-group">
+                        <label class="form-label">Training Epochs</label>
+                        <input type="number" id="epochs" class="form-input" value="5" min="1" max="100">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Sequence Length</label>
+                        <input type="number" id="seq_len" class="form-input" value="30" min="3" max="50">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Visualizations to Generate</label>
+                        <input type="number" id="visualize_limit" class="form-input" value="10" min="1" max="50">
+                    </div>
+                </div>
             </div>
-            <div class="tab-container">
-                <button class="tab-button active" onclick="openTab(event, 'federated', 'static_images')">Static Images</button>
-                <button class="tab-button" onclick="openTab(event, 'federated', 'animations')">Animations</button>
+
+            <!-- Training Controls -->
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-server"></i> Centralized Training
+                        </h3>
+                    </div>
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                        Traditional approach where all data is processed on a central server
+                    </p>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn btn-primary" onclick="runCentralizedTrain()">
+                            <i class="fas fa-play"></i> Start Training
+                        </button>
+                        <button class="btn btn-secondary" onclick="runCentralizedTest()">
+                            <i class="fas fa-vial"></i> Run Test
+                        </button>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-network-wired"></i> Federated Training
+                        </h3>
+                    </div>
+                    <p style="margin-bottom: 1rem; color: var(--text-secondary);">
+                        Privacy-preserving approach with distributed learning across multiple clients
+                    </p>
+                    <div style="display: flex; gap: 1rem; flex-wrap: wrap;">
+                        <button class="btn btn-success" onclick="runFederatedTrain()">
+                            <i class="fas fa-play"></i> Start Training
+                        </button>
+                        <button class="btn btn-secondary" onclick="runFederatedTest()">
+                            <i class="fas fa-vial"></i> Run Test
+                        </button>
+                    </div>
+                    <div class="form-group" style="margin-top: 1rem;">
+                        <label class="form-label">Number of Clients</label>
+                        <input type="number" id="num_clients" class="form-input" value="2" min="2" max="10"
+                            style="max-width: 150px;">
+                    </div>
+                </div>
             </div>
-            <div id="federated_static_images" class="tab-content active">
-                <div class="image-gallery" id="federated_static_gallery"></div>
-            </div>
-            <div id="federated_animations" class="tab-content">
-                <div class="image-gallery" id="federated_animation_gallery"></div>
+
+            <!-- Status Messages -->
+            <div id="status_messages"></div>
+
+            <!-- Console Output -->
+            <div class="card" id="console_card" style="display: none;">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-terminal"></i> Console Output
+                    </h3>
+                    <button class="btn btn-secondary" onclick="clearConsole()">
+                        <i class="fas fa-trash"></i> Clear
+                    </button>
+                </div>
+                <div id="console_output"
+                    style="background: #1a1a1a; color: #00ff00; font-family: 'Courier New', monospace; padding: 1rem; border-radius: 0.5rem; height: 300px; overflow-y: auto; white-space: pre-wrap; font-size: 0.875rem;">
+                    <div style="color: #888;">Console output will appear here...</div>
+                </div>
             </div>
         </div>
-        <!-- Centralized Model Section -->
-        <div class="model-section" id="centralized">
-            <h2>Centralized Model</h2>
-            <div class="metrics-summary">
-                <strong>Final Test Loss:</strong> <span id="centralized_test_loss">Loading...</span><br>
-                <strong>minADE(K=1):</strong> <span id="centralized_minade_k1">Loading...</span><br>
-                <strong>minFDE(K=1):</strong> <span id="centralized_minfde_k1">Loading...</span><br>
-                <strong>MR(2.0m):</strong> <span id="centralized_mr_2m">Loading...</span>
+
+        <!-- Performance Comparison Section -->
+        <div id="comparison" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-chart-line"></i> Performance Metrics Comparison
+                    </h2>
+                </div>
+                <div id="comparison_content">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Run both centralized and federated training to see detailed performance comparisons here.
+                    </div>
+                </div>
             </div>
-            <div class="tab-container">
-                <button class="tab-button active" onclick="openTab(event, 'centralized', 'static_images')">Static Images</button>
-                <button class="tab-button" onclick="openTab(event, 'centralized', 'animations')">Animations</button>
+
+            <div class="grid grid-2">
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-chart-bar"></i> Training Loss Comparison
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="lossComparisonChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">
+                            <i class="fas fa-bullseye"></i> Test Metrics Comparison
+                        </h3>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="metricsComparisonChart"></canvas>
+                    </div>
+                </div>
             </div>
-            <div id="centralized_static_images" class="tab-content active">
-                <div class="image-gallery" id="centralized_static_gallery"></div>
-            </div>
-            <div id="centralized_animations" class="tab-content">
-                <div class="image-gallery" id="centralized_animation_gallery"></div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h3 class="card-title">
+                        <i class="fas fa-table"></i> Detailed Comparison Table
+                    </h3>
+                </div>
+                <div id="comparison_table_container">
+                    <table class="comparison-table">
+                        <thead>
+                            <tr>
+                                <th>Metric</th>
+                                <th>Centralized</th>
+                                <th>Federated</th>
+                                <th>Difference</th>
+                                <th>Performance Gap</th>
+                            </tr>
+                        </thead>
+                        <tbody id="comparison_table_body">
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-secondary);">
+                                    No comparison data available yet
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
+
+        <!-- Visualizations Section -->
+        <div id="visualizations" class="section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">
+                        <i class="fas fa-images"></i> Trajectory Predictions Visualizations
+                    </h2>
+                    <div>
+                        <select id="viz_model_select" class="form-select" style="width: auto;"
+                            onchange="loadVisualizations()">
+                            <option value="GATv2">GATv2</option>
+                            <option value="VectorNet">VectorNet</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-2">
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-server"></i> Centralized Predictions
+                            </h3>
+                        </div>
+                        <div id="centralized_visualizations">
+                            <div class="alert alert-info">
+                                Run centralized testing to generate visualizations
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-network-wired"></i> Federated Predictions
+                            </h3>
+                        </div>
+                        <div id="federated_visualizations">
+                            <div class="alert alert-info">
+                                Run federated testing to generate visualizations
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+
     </div>
-    <!-- Modal for Image/Video Viewing -->
-    <div id="myModal" class="modal">
-        <span class="close">&times;</span>
+
+    <!-- Modal for image viewing -->
+    <div id="imageModal" class="modal">
+        <span class="modal-close" onclick="closeImageModal()">&times;</span>
         <img class="modal-content" id="modalImage">
-        <video class="modal-content" id="modalVideo" controls autoplay loop muted style="display:none;"></video>
     </div>
+
     <script>
-        const RESULTS_BASE_PATH = '../results/test_predictions/';
+        // Global variables
+        let currentProcesses = {};
+        let comparisonData = {};
+        let lossChart = null;
+        let metricsChart = null;
 
-        document.addEventListener('DOMContentLoaded', function() {
-            loadAllMetricsAndVisualizations();
-            // Initial tab setup for both models
-            openTab(null, 'centralized', 'static_images');
-            openTab(null, 'federated', 'static_images');
-            // Modal functionality
-            const modal = document.getElementById("myModal");
-            const modalImage = document.getElementById("modalImage");
-            const modalVideo = document.getElementById("modalVideo");
-            const closeBtn = document.getElementsByClassName("close")[0];
-            closeBtn.onclick = function() {
-                modal.style.display = "none";
-                modalImage.style.display = "none";
-                modalVideo.style.display = "none";
-                modalVideo.pause();
+        // Navigation functions
+        function showSection(sectionId) {
+            // Hide all sections
+            document.querySelectorAll('.section').forEach(section => {
+                section.classList.remove('active');
+            });
+
+            // Remove active class from all nav tabs
+            document.querySelectorAll('.nav-tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+
+            // Show selected section
+            document.getElementById(sectionId).classList.add('active');
+
+            // Add active class to clicked tab
+            event.target.classList.add('active');
+
+            // Load section-specific data
+            if (sectionId === 'comparison') {
+                loadComparisonData();
+            } else if (sectionId === 'visualizations') {
+                loadVisualizations();
             }
-            document.querySelectorAll('.image-gallery').forEach(gallery => {
-                gallery.addEventListener('click', event => {
-                    if (event.target.tagName === 'IMG') {
-                        modal.style.display = "block";
-                        modalImage.src = event.target.src;
-                        modalImage.style.display = "block";
+        }
+
+        // Training functions
+        function runCentralizedTrain() {
+            const config = getTrainingConfig();
+            showStatusMessage('Starting centralized training...', 'info');
+
+            fetch('/run_script', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    mode: 'centralized_train',
+                    ...config
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'started') {
+                        showStatusMessage(`Centralized training started for ${config.model_name}`, 'success');
+                        if (data.process_id) {
+                            monitorProcess(data.process_id);
+                        }
+                    } else {
+                        showStatusMessage(`Error: ${data.message}`, 'error');
                     }
+                })
+                .catch(error => {
+                    showStatusMessage(`Error: ${error.message}`, 'error');
                 });
-            });
-        });
-
-        function openTab(evt, modelType, tabCategory) {
-            // Hide all tab contents for the specific modelType
-            document.querySelectorAll(`#${modelType}_static_images, #${modelType}_animations`).forEach(tabContent => {
-                tabContent.style.display = 'none';
-                tabContent.classList.remove('active');
-            });
-            // Deactivate all tab buttons for the specific modelType
-            document.querySelectorAll(`#${modelType} .tab-button`).forEach(button => {
-                button.classList.remove('active');
-            });
-            // Show the selected tab content
-            document.getElementById(`${modelType}_${tabCategory}`).style.display = 'block';
-            document.getElementById(`${modelType}_${tabCategory}`).classList.add('active');
-            // Activate the clicked button (only for the correct modelType)
-            if (evt) {
-                evt.currentTarget.classList.add('active');
-            } else {
-                // For initial load, activate the first tab button for each modelType
-                const tabButtons = document.querySelectorAll(`#${modelType} .tab-button`);
-                if (tabCategory === 'static_images') tabButtons[0].classList.add('active');
-                else tabButtons[1].classList.add('active');
-            }
         }
 
-        async function loadAllMetricsAndVisualizations() {
-            const modelNames = ["GATv2", "VectorNet"];
+        function runFederatedTrain() {
+            const config = getTrainingConfig();
+            const numClients = document.getElementById('num_clients').value;
 
-            for (const modelName of modelNames) {
-                // Centralized Metrics
-                try {
-                    const response = await fetch('/get_history/centralized');
-                    const result = await response.json();
-                    if (result.status === 'success') {
-                        const allRuns = result.history.filter(run => run.model_name === modelName);
-                        if (allRuns.length > 0) {
-                            const latestRun = allRuns[allRuns.length - 1]; // Get the latest run
-                            const finalMetrics = latestRun.history[latestRun.history.length - 1]; // Last epoch's metrics
+            showStatusMessage('Starting federated training...', 'info');
 
-                            document.getElementById('centralized_test_loss').textContent = finalMetrics.val_loss ? finalMetrics.val_loss.toFixed(4) : 'N/A';
-                            document.getElementById('centralized_minade_k1').textContent = finalMetrics.val_min_ade_k1 ? finalMetrics.val_min_ade_k1.toFixed(4) : 'N/A';
-                            document.getElementById('centralized_minfde_k1').textContent = finalMetrics.val_min_fde_k1 ? finalMetrics.val_min_fde_k1.toFixed(4) : 'N/A';
-                            document.getElementById('centralized_mr_2m').textContent = finalMetrics.val_mr_2m ? finalMetrics.val_mr_2m.toFixed(4) : 'N/A';
-
-                            // Update summary table (only for the currently selected model in the dropdown)
-                            if (document.getElementById('model_select').value === modelName) {
-                                document.getElementById('summary_centralized_loss').textContent = finalMetrics.val_loss ? finalMetrics.val_loss.toFixed(4) : 'N/A';
-                                document.getElementById('summary_centralized_minade').textContent = finalMetrics.val_min_ade_k1 ? finalMetrics.val_min_ade_k1.toFixed(4) : 'N/A';
-                                document.getElementById('summary_centralized_minfde').textContent = finalMetrics.val_min_fde_k1 ? finalMetrics.val_min_fde_k1.toFixed(4) : 'N/A';
-                                document.getElementById('summary_centralized_mr').textContent = finalMetrics.val_mr_2m ? finalMetrics.val_mr_2m.toFixed(4) : 'N/A';
-                                document.getElementById('summary_centralized_epochs').textContent = latestRun.epochs_trained;
-                                document.getElementById('summary_lr').textContent = latestRun.learning_rate;
-                                document.getElementById('summary_batch_size').textContent = document.getElementById('batch_size').value; // Assuming these are constant for now
-                                document.getElementById('summary_num_scenarios').textContent = document.getElementById('num_scenarios').value; // Assuming these are constant for now
-                            }
-
-                            // Render chart for this model
-                            const trainLosses = latestRun.history.map(item => item.train_loss);
-                            const valLosses = latestRun.history.map(item => item.val_loss);
-                            renderChart(`centralizedTrainingChart_${modelName}`, trainLosses, valLosses, 'Epoch');
+            fetch('/start_federated_training', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    ...config,
+                    num_clients: parseInt(numClients),
+                    num_rounds: 3
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'started') {
+                        showStatusMessage(`Federated training started with ${numClients} clients`, 'success');
+                        if (data.process_id) {
+                            monitorProcess(data.process_id);
                         }
+                    } else {
+                        showStatusMessage(`Error: ${data.message}`, 'error');
                     }
-                } catch (error) {
-                    console.error(`Error loading centralized history for ${modelName}:`, error);
-                }
-
-                // Federated Metrics
-                try {
-                    const response = await fetch('/get_history/federated');
-                    const result = await response.json();
-                    if (result.status === 'success') {
-                        const allRuns = result.history.filter(run => run.model_name === modelName);
-                        if (allRuns.length > 0) {
-                            const latestRun = allRuns[allRuns.length - 1]; // Get the latest run
-                            const finalMetrics = latestRun.final_metrics; // Aggregated metrics from server
-
-                            document.getElementById('federated_test_loss').textContent = finalMetrics.loss ? finalMetrics.loss.toFixed(4) : 'N/A';
-                            document.getElementById('federated_minade_k1').textContent = finalMetrics.min_ade_k1 ? finalMetrics.min_ade_k1.toFixed(4) : 'N/A';
-                            document.getElementById('federated_minfde_k1').textContent = finalMetrics.min_fde_k1 ? finalMetrics.min_fde_k1.toFixed(4) : 'N/A';
-                            document.getElementById('federated_mr_2m').textContent = finalMetrics.mr_2m ? finalMetrics.mr_2m.toFixed(4) : 'N/A';
-
-                            // Update summary table (only for the currently selected model in the dropdown)
-                            if (document.getElementById('model_select').value === modelName) {
-                                document.getElementById('summary_federated_loss').textContent = finalMetrics.loss ? finalMetrics.loss.toFixed(4) : 'N/A';
-                                document.getElementById('summary_federated_minade').textContent = finalMetrics.min_ade_k1 ? finalMetrics.min_ade_k1.toFixed(4) : 'N/A';
-                                document.getElementById('summary_federated_minfde').textContent = finalMetrics.min_fde_k1 ? finalMetrics.min_fde_k1.toFixed(4) : 'N/A';
-                                document.getElementById('summary_federated_mr').textContent = finalMetrics.mr_2m ? finalMetrics.mr_2m.toFixed(4) : 'N/A';
-                                document.getElementById('summary_federated_rounds').textContent = latestRun.rounds_trained;
-                            }
-
-                            // Render chart for this model (using distributed losses from history)
-                            const distributedLosses = latestRun.history.losses_distributed.map(item => item[1]);
-                            const centralizedLosses = latestRun.history.losses_centralized.map(item => item[1]);
-                            renderChart(`federatedTrainingChart_${modelName}`, distributedLosses, centralizedLosses, 'Round');
-                        }
-                    }
-                } catch (error) {
-                    console.error(`Error loading federated history for ${modelName}:`, error);
-                }
-
-                // Load Visualizations for this model
-                loadVisualizations('centralized', modelName);
-                loadVisualizations('federated', modelName);
-            }
+                })
+                .catch(error => {
+                    showStatusMessage(`Error: ${error.message}`, 'error');
+                });
         }
 
-        function renderChart(canvasId, trainLosses, valLosses, labelX) {
-            const ctx = document.getElementById(canvasId);
-            if (!ctx) return; // Ensure canvas exists
-            const chartCtx = ctx.getContext('2d');
+        function runCentralizedTest() {
+            const config = getTrainingConfig();
+            showStatusMessage('Starting centralized testing...', 'info');
+
+            fetch('/run_script', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    mode: 'centralized_test',
+                    test_dir: config.test_dir,
+                    batch_size: config.batch_size,
+                    num_scenarios: config.num_scenarios,
+                    model_name: config.model_name,
+                    seq_len: config.seq_len
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'started') {
+                        showStatusMessage('Centralized testing started', 'success');
+                        if (data.process_id) {
+                            monitorProcess(data.process_id);
+                        }
+                    } else {
+                        showStatusMessage(`Error: ${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    showStatusMessage(`Error: ${error.message}`, 'error');
+                });
+        }
+
+        function runFederatedTest() {
+            const config = getTrainingConfig();
+            showStatusMessage('Starting federated testing...', 'info');
+
+            fetch('/run_script', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    mode: 'federated_test',
+                    test_dir: config.test_dir,
+                    batch_size: config.batch_size,
+                    num_scenarios: config.num_scenarios,
+                    model_name: config.model_name,
+                    seq_len: config.seq_len
+                })
+            })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'started') {
+                        showStatusMessage('Federated testing started', 'success');
+                        if (data.process_id) {
+                            monitorProcess(data.process_id);
+                        }
+                    } else {
+                        showStatusMessage(`Error: ${data.message}`, 'error');
+                    }
+                })
+                .catch(error => {
+                    showStatusMessage(`Error: ${error.message}`, 'error');
+                });
+        }
+
+        // Utility functions
+        function getTrainingConfig() {
+            return {
+                model_name: document.getElementById('model_select').value,
+                train_dir: document.getElementById('train_dir').value,
+                val_dir: document.getElementById('val_dir').value,
+                test_dir: document.getElementById('test_dir').value,
+                batch_size: parseInt(document.getElementById('batch_size').value),
+                num_scenarios: parseInt(document.getElementById('num_scenarios').value),
+                epochs: parseInt(document.getElementById('epochs').value),
+                lr: parseFloat(document.getElementById('lr').value),
+                seq_len: parseInt(document.getElementById('seq_len').value),
+                visualize_limit: parseInt(document.getElementById('visualize_limit').value)
+            };
+        }
+
+        function showStatusMessage(message, type) {
+            const container = document.getElementById('status_messages');
+            const alertClass = `alert-${type}`;
+
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert ${alertClass}`;
+            alertDiv.innerHTML = `
+                <i class="fas fa-${type === 'success' ? 'check-circle' : type === 'error' ? 'exclamation-circle' : 'info-circle'}"></i>
+                ${message}
+            `;
+
+            container.appendChild(alertDiv);
+
+            // Auto-remove after 10 seconds
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    alertDiv.parentNode.removeChild(alertDiv);
+                }
+            }, 10000);
+        }
+
+        function monitorProcess(processId) {
+            // Show console output
+            showConsole();
+
+            let isProcessRunning = true;
+
+            const checkStatus = () => {
+                // Check process status
+                fetch(`/get_process_status/${processId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.status === 'success') {
+                            const process = data.process;
+                            if (process.status === 'running') {
+                                const duration = process.duration ? Math.round(process.duration) : 0;
+                                showStatusMessage(`${process.mode} (${process.model_name}) running for ${duration}s...`, 'info');
+                                // Continue monitoring while running
+                                if (isProcessRunning) {
+                                    setTimeout(checkStatus, 2000); // Check more frequently
+                                }
+                            } else if (process.status === 'completed') {
+                                const totalTime = process.duration ? Math.round(process.duration) : 0;
+                                showStatusMessage(`${process.mode} (${process.model_name}) completed in ${totalTime}s`, 'success');
+                                isProcessRunning = false;
+                                // Final console update
+                                updateConsoleOutput(processId);
+                                // Refresh data after completion
+                                setTimeout(() => {
+                                    loadComparisonData();
+                                    loadVisualizations();
+                                }, 2000);
+                            } else if (process.status === 'error') {
+                                showStatusMessage(`${process.mode} (${process.model_name}) failed: ${process.error || 'Unknown error'}`, 'error');
+                                isProcessRunning = false;
+                                // Final console update
+                                updateConsoleOutput(processId);
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error checking process status:', error);
+                    });
+
+                // Update console output more frequently while running
+                if (isProcessRunning) {
+                    updateConsoleOutput(processId);
+                }
+            };
+
+            // Start monitoring immediately and more frequently
+            checkStatus();
+
+            // Set up continuous console updates while process is running
+            const consoleUpdateInterval = setInterval(() => {
+                if (isProcessRunning) {
+                    updateConsoleOutput(processId);
+                } else {
+                    clearInterval(consoleUpdateInterval);
+                }
+            }, 1000); // Update console every second
+        }
+
+        function showConsole() {
+            document.getElementById('console_card').style.display = 'block';
+        }
+
+        function clearConsole() {
+            document.getElementById('console_output').innerHTML = '<div style="color: #888;">Console cleared...</div>';
+        }
+
+        function updateConsoleOutput(processId) {
+            fetch(`/get_process_output/${processId}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.output) {
+                        const consoleDiv = document.getElementById('console_output');
+                        const currentScroll = consoleDiv.scrollTop;
+                        const maxScroll = consoleDiv.scrollHeight - consoleDiv.clientHeight;
+                        const isScrolledToBottom = Math.abs(currentScroll - maxScroll) < 10;
+
+                        // Format output with proper line breaks and colors
+                        let formattedOutput = data.output.map(line => {
+                            if (line.includes('[ERROR]')) {
+                                return `<span style="color: #ff4444;">${line}</span>`;
+                            } else if (line.includes('[WARN]')) {
+                                return `<span style="color: #ffaa00;">${line}</span>`;
+                            } else if (line.includes('[INFO]')) {
+                                return `<span style="color: #00ff00;">${line}</span>`;
+                            } else if (line.includes('[SERVER]')) {
+                                return `<span style="color: #00aaff;">${line}</span>`;
+                            } else if (line.includes('[CLIENT-')) {
+                                return `<span style="color: #ff00aa;">${line}</span>`;
+                            } else {
+                                return `<span style="color: #cccccc;">${line}</span>`;
+                            }
+                        }).join('\n');
+
+                        if (formattedOutput.trim()) {
+                            consoleDiv.innerHTML = formattedOutput;
+
+                            // Auto-scroll to bottom only if user was already at bottom
+                            if (isScrolledToBottom) {
+                                consoleDiv.scrollTop = consoleDiv.scrollHeight;
+                            }
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching console output:', error);
+                });
+        }
+
+        // Comparison data loading and visualization
+        function loadComparisonData() {
+            console.log('Loading comparison data...');
+            fetch('/get_comparison_data')
+                .then(response => {
+                    console.log('Comparison data response:', response);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Comparison data received:', data);
+                    if (data.status === 'success') {
+                        displayComparisonData(data.data);
+                    } else {
+                        console.error('Comparison data error:', data.message);
+                        document.getElementById('comparison_content').innerHTML =
+                            '<div class="alert alert-warning">No comparison data available. Please train and test both centralized and federated models first.</div>';
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading comparison data:', error);
+                    document.getElementById('comparison_content').innerHTML =
+                        '<div class="alert alert-error">Error loading comparison data. Please try again.</div>';
+                });
+        }
+
+        function displayComparisonData(comparisonData) {
+            const container = document.getElementById('comparison_content');
+
+            if (!comparisonData.centralized.training && !comparisonData.federated.training) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Run both centralized and federated training to see detailed performance comparisons here.
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="grid grid-2">';
+
+            // Centralized summary
+            if (comparisonData.centralized.training) {
+                const cent = comparisonData.centralized;
+                html += `
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-server"></i> Centralized Results
+                            </h3>
+                        </div>
+                        <div class="grid grid-2">
+                            <div class="metric-card">
+                                <div class="metric-value">${cent.testing?.test_loss?.toFixed(4) || 'N/A'}</div>
+                                <div class="metric-label">Test Loss</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">${cent.testing?.test_min_ade_k1?.toFixed(4) || 'N/A'}</div>
+                                <div class="metric-label">Min ADE (K=1)</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Federated summary
+            if (comparisonData.federated.training) {
+                const fed = comparisonData.federated;
+                html += `
+                    <div class="card">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-network-wired"></i> Federated Results
+                            </h3>
+                        </div>
+                        <div class="grid grid-2">
+                            <div class="metric-card">
+                                <div class="metric-value">${fed.testing?.test_loss?.toFixed(4) || 'N/A'}</div>
+                                <div class="metric-label">Test Loss</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">${fed.testing?.test_min_ade_k1?.toFixed(4) || 'N/A'}</div>
+                                <div class="metric-label">Min ADE (K=1)</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            html += '</div>';
+
+            // Performance comparison
+            if (comparisonData.comparison_metrics && Object.keys(comparisonData.comparison_metrics).length > 0) {
+                html += `
+                    <div class="card" style="margin-top: 1rem;">
+                        <div class="card-header">
+                            <h3 class="card-title">
+                                <i class="fas fa-chart-line"></i> Performance Gap Analysis
+                            </h3>
+                        </div>
+                        <div class="grid grid-2">
+                            <div class="metric-card">
+                                <div class="metric-value">${(comparisonData.comparison_metrics.performance_gap?.test_loss_diff || 0).toFixed(4)}</div>
+                                <div class="metric-label">Loss Difference</div>
+                            </div>
+                            <div class="metric-card">
+                                <div class="metric-value">${(comparisonData.comparison_metrics.performance_gap?.ade_diff || 0).toFixed(4)}</div>
+                                <div class="metric-label">ADE Difference</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            container.innerHTML = html;
+
+            // Create charts after the HTML is rendered
+            createTrainingLossChart(comparisonData);
+            createTestMetricsChart(comparisonData);
+            updateComparisonTable(comparisonData);
+        }
+
+        function createTrainingLossChart(comparisonData) {
+            const ctx = document.getElementById('lossComparisonChart');
+            if (!ctx) return;
 
             // Destroy existing chart if it exists
-            if (window[canvasId + 'Chart'] instanceof Chart) {
-                window[canvasId + 'Chart'].destroy();
+            if (lossChart) {
+                lossChart.destroy();
             }
 
-            const labels = Array.from({length: trainLosses.length}, (_, i) => i + 1);
-            window[canvasId + 'Chart'] = new Chart(chartCtx, {
+            const centTraining = comparisonData.centralized?.training;
+            const fedTraining = comparisonData.federated?.training;
+
+            if (!centTraining && !fedTraining) {
+                ctx.style.display = 'none';
+                return;
+            }
+
+            ctx.style.display = 'block';
+
+            const datasets = [];
+            const labels = [];
+
+            // Add centralized training data
+            if (centTraining && centTraining.history) {
+                const centLosses = centTraining.history.map(epoch => epoch.train_loss || epoch.loss || 0);
+                labels.length = Math.max(labels.length, centLosses.length);
+                for (let i = 0; i < centLosses.length; i++) {
+                    labels[i] = `Epoch ${i + 1}`;
+                }
+                datasets.push({
+                    label: 'Centralized Training Loss',
+                    data: centLosses,
+                    borderColor: '#2563eb',
+                    backgroundColor: 'rgba(37, 99, 235, 0.1)',
+                    tension: 0.4
+                });
+            }
+
+            // Add federated training data
+            if (fedTraining && fedTraining.history) {
+                const fedLosses = fedTraining.history.map(epoch => epoch.train_loss || epoch.loss || 0);
+                labels.length = Math.max(labels.length, fedLosses.length);
+                for (let i = 0; i < fedLosses.length; i++) {
+                    labels[i] = `Epoch ${i + 1}`;
+                }
+                datasets.push({
+                    label: 'Federated Training Loss',
+                    data: fedLosses,
+                    borderColor: '#7c3aed',
+                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                    tension: 0.4
+                });
+            }
+
+            if (datasets.length === 0) {
+                ctx.style.display = 'none';
+                return;
+            }
+
+            lossChart = new Chart(ctx, {
                 type: 'line',
                 data: {
                     labels: labels,
-                    datasets: [
-                        {
-                            label: 'Training Loss',
-                            data: trainLosses,
-                            borderColor: '#4a4af7',
-                            backgroundColor: 'rgba(74, 74, 247, 0.2)',
-                            fill: true,
-                            tension: 0.1
-                        },
-                        {
-                            label: 'Validation/Test Loss',
-                            data: valLosses,
-                            borderColor: '#f74a4a',
-                            backgroundColor: 'rgba(247, 74, 74, 0.2)',
-                            fill: true,
-                            tension: 0.1
-                        }
-                    ].filter(dataset => dataset.data.length > 0)
+                    datasets: datasets
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    scales: {
-                        x: {
-                            title: {
-                                display: true,
-                                text: labelX
-                            }
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Training Loss Comparison'
                         },
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
                         y: {
+                            beginAtZero: true,
                             title: {
                                 display: true,
                                 text: 'Loss'
-                            },
-                            suggestedMax: Math.max(...trainLosses, ...valLosses) * 1.1 // Add 10% buffer
+                            }
+                        },
+                        x: {
+                            title: {
+                                display: true,
+                                text: 'Training Epochs'
+                            }
                         }
                     }
                 }
             });
         }
 
-        async function loadVisualizations(trainingType, modelName) {
-            const staticGallery = document.getElementById(`${trainingType}_static_gallery`);
-            const animationGallery = document.getElementById(`${trainingType}_animation_gallery`);
-            
-            // Clear previous images
-            staticGallery.innerHTML = '';
-            animationGallery.innerHTML = '';
+        function createTestMetricsChart(comparisonData) {
+            const ctx = document.getElementById('metricsComparisonChart');
+            if (!ctx) return;
 
-            try {
-                const response = await fetch(`/get_visualizations/${trainingType}/${modelName}`);
-                const result = await response.json();
-                if (result.status === 'success') {
-                    const images = result.images;
-                    images.forEach(imagePath => {
-                        const filename = imagePath.split('/').pop();
-                        const scenarioIdMatch = filename.match(/test_sample_\d+_prediction\.png/);
-                        const scenarioId = scenarioIdMatch ? filename.split('_')[2] : 'Unknown'; // Extracting the sample index
-
-                        if (imagePath.endsWith('.png')) {
-                            const staticImgItem = document.createElement('div');
-                            staticImgItem.classList.add('image-item');
-                            const staticImg = document.createElement('img');
-                            staticImg.src = imagePath;
-                            staticImg.alt = `${trainingType} Prediction ${scenarioId}`;
-                            staticImgItem.appendChild(staticImg);
-                            staticImgItem.innerHTML += `<p>Sample: ${scenarioId}</p>`;
-                            staticGallery.appendChild(staticImgItem);
-                        } else if (imagePath.endsWith('.gif')) {
-                            const animationItem = document.createElement('div');
-                            animationItem.classList.add('image-item');
-                            const animationImg = document.createElement('img');
-                            animationImg.src = imagePath;
-                            animationImg.alt = `${trainingType} Animation ${scenarioId}`;
-                            animationItem.appendChild(animationImg);
-                            animationItem.innerHTML += `<p>Sample: ${scenarioId}</p>`;
-                            animationGallery.appendChild(animationItem);
-                        }
-                    });
-                } else {
-                    console.error(`Error loading ${trainingType} visualizations for ${modelName}:`, result.message);
-                    staticGallery.innerHTML = `<p style='color:#b00;'>${result.message}</p>`;
-                    animationGallery.innerHTML = `<p style='color:#b00;'>${result.message}</p>`;
-                }
-            } catch (error) {
-                console.error(`Network error loading ${trainingType} visualizations for ${modelName}:`, error);
-                staticGallery.innerHTML = `<p style='color:#b00;'>Error loading visualizations.</p>`;
-                animationGallery.innerHTML = `<p style='color:#b00;'>Error loading visualizations.</p>`;
+            // Destroy existing chart if it exists
+            if (metricsChart) {
+                metricsChart.destroy();
             }
-        }
 
-        async function runScript(mode, role = null) {
-            const train_dir = document.getElementById('train_dir').value;
-            const val_dir = document.getElementById('val_dir').value;
-            const test_dir = document.getElementById('test_dir').value;
-            const batch_size = parseInt(document.getElementById('batch_size').value);
-            const num_scenarios = parseInt(document.getElementById('num_scenarios').value);
-            const epochs = parseInt(document.getElementById('epochs').value);
-            const lr = parseFloat(document.getElementById('lr').value);
-            const model_name = document.getElementById('model_select').value; // Get selected model name
+            const centTesting = comparisonData.centralized?.testing;
+            const fedTesting = comparisonData.federated?.testing;
 
-            const payload = {
-                mode: mode,
-                train_dir: train_dir,
-                val_dir: val_dir,
-                test_dir: test_dir,
-                batch_size: batch_size,
-                num_scenarios: num_scenarios,
-                epochs: epochs,
-                lr: lr,
-                role: role,
-                model_name: model_name // Include model name in payload
-            };
+            if (!centTesting && !fedTesting) {
+                ctx.style.display = 'none';
+                return;
+            }
 
-            displayMessage('Starting script...', 'info');
-            try {
-                const response = await fetch('/run_script', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
+            ctx.style.display = 'block';
+
+            const labels = ['Test Loss', 'Min ADE (K=1)', 'Min FDE (K=1)', 'Miss Rate (2m)'];
+            const datasets = [];
+
+            // Add centralized test data
+            if (centTesting) {
+                datasets.push({
+                    label: 'Centralized',
+                    data: [
+                        centTesting.test_loss || 0,
+                        centTesting.test_min_ade_k1 || 0,
+                        centTesting.test_min_fde_k1 || 0,
+                        centTesting.test_mr_2m || 0
+                    ],
+                    backgroundColor: 'rgba(37, 99, 235, 0.8)',
+                    borderColor: '#2563eb',
+                    borderWidth: 1
                 });
-                const result = await response.json();
-                if (result.status === 'started') {
-                    displayMessage(result.message + ' Check your backend console for detailed output.', 'success');
-                } else {
-                    displayMessage('Error: ' + result.message, 'error');
+            }
+
+            // Add federated test data
+            if (fedTesting) {
+                datasets.push({
+                    label: 'Federated',
+                    data: [
+                        fedTesting.test_loss || 0,
+                        fedTesting.test_min_ade_k1 || 0,
+                        fedTesting.test_min_fde_k1 || 0,
+                        fedTesting.test_mr_2m || 0
+                    ],
+                    backgroundColor: 'rgba(124, 58, 237, 0.8)',
+                    borderColor: '#7c3aed',
+                    borderWidth: 1
+                });
+            }
+
+            if (datasets.length === 0) {
+                ctx.style.display = 'none';
+                return;
+            }
+
+            metricsChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: 'Test Metrics Comparison'
+                        },
+                        legend: {
+                            position: 'top'
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Metric Value'
+                            }
+                        }
+                    }
                 }
-            } catch (error) {
-                displayMessage('Network error: ' + error.message, 'error');
+            });
+        }
+
+        function updateComparisonTable(comparisonData) {
+            const tbody = document.getElementById('comparison_table_body');
+            if (!tbody) return;
+
+            const centTesting = comparisonData.centralized?.testing;
+            const fedTesting = comparisonData.federated?.testing;
+
+            if (!centTesting && !fedTesting) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: var(--text-secondary);">
+                            No comparison data available yet
+                        </td>
+                    </tr>
+                `;
+                return;
             }
+
+            let html = '';
+            const metrics = [
+                { name: 'Test Loss', cent: centTesting?.test_loss, fed: fedTesting?.test_loss },
+                { name: 'Min ADE (K=1)', cent: centTesting?.test_min_ade_k1, fed: fedTesting?.test_min_ade_k1 },
+                { name: 'Min FDE (K=1)', cent: centTesting?.test_min_fde_k1, fed: fedTesting?.test_min_fde_k1 },
+                { name: 'Miss Rate (2m)', cent: centTesting?.test_mr_2m, fed: fedTesting?.test_mr_2m }
+            ];
+
+            metrics.forEach(metric => {
+                const centVal = metric.cent?.toFixed(4) || 'N/A';
+                const fedVal = metric.fed?.toFixed(4) || 'N/A';
+                const diff = (metric.cent && metric.fed) ? (metric.fed - metric.cent).toFixed(4) : 'N/A';
+                const gap = (metric.cent && metric.fed) ? ((metric.fed - metric.cent) / metric.cent * 100).toFixed(2) + '%' : 'N/A';
+
+                html += `
+                    <tr>
+                        <td>${metric.name}</td>
+                        <td>${centVal}</td>
+                        <td>${fedVal}</td>
+                        <td>${diff}</td>
+                        <td>${gap}</td>
+                    </tr>
+                `;
+            });
+
+            tbody.innerHTML = html;
         }
 
-        function runCentralizedTrain() {
-            runScript('centralized');
+        // Visualization functions
+        function loadVisualizations() {
+            const modelName = document.getElementById('viz_model_select').value;
+            console.log('Loading visualizations for model:', modelName);
+
+            // Load centralized visualizations
+            fetch(`/get_visualizations/centralized/${modelName}`)
+                .then(response => {
+                    console.log('Centralized visualizations response:', response);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Centralized visualizations data:', data);
+                    if (data.status === 'success') {
+                        displayVisualizations('centralized_visualizations', data.visualizations);
+                    } else {
+                        console.error('Centralized visualizations error:', data.message);
+                        document.getElementById('centralized_visualizations').innerHTML = `
+                            <div class="alert alert-info">
+                                No centralized visualizations available for ${modelName}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading centralized visualizations:', error);
+                });
+
+            // Load federated visualizations
+            fetch(`/get_visualizations/federated/${modelName}`)
+                .then(response => {
+                    console.log('Federated visualizations response:', response);
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Federated visualizations data:', data);
+                    if (data.status === 'success') {
+                        displayVisualizations('federated_visualizations', data.visualizations);
+                    } else {
+                        console.error('Federated visualizations error:', data.message);
+                        document.getElementById('federated_visualizations').innerHTML = `
+                            <div class="alert alert-info">
+                                No federated visualizations available for ${modelName}
+                            </div>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading federated visualizations:', error);
+                });
         }
 
-        function runFederatedTrainServer() {
-            runScript('federated', 'server');
-        }
+        function displayVisualizations(containerId, visualizations) {
+            const container = document.getElementById(containerId);
 
-        function runFederatedTrainClient() {
-            runScript('federated', 'client');
-        }
-
-        function runTest(trainingType) {
-            const model_name = document.getElementById('model_select').value; // Get selected model name
-            runScript('test', null, model_name); // Pass model_name to runScript
-        }
-
-        function displayMessage(message, type) {
-            const outputDiv = document.getElementById('output_message');
-            outputDiv.textContent = message;
-            outputDiv.className = ''; // Clear existing classes
-            outputDiv.classList.add('message', type);
-            outputDiv.style.display = 'block';
-            if (type === 'error') {
-                outputDiv.style.backgroundColor = '#f8d7da';
-                outputDiv.style.borderColor = '#f5c6cb';
-                outputDiv.style.color = '#721c24';
-            } else if (type === 'success') {
-                outputDiv.style.backgroundColor = '#d4edda';
-                outputDiv.style.borderColor = '#c3e6cb';
-                outputDiv.style.color = '#155724';
-            } else { // info
-                outputDiv.style.backgroundColor = '#e7f3fe';
-                outputDiv.style.borderColor = '#cce7ff';
-                outputDiv.style.color = '#004085';
+            if (!visualizations.static_images || visualizations.static_images.length === 0) {
+                container.innerHTML = `
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        No visualizations available. Run testing to generate prediction visualizations.
+                    </div>
+                `;
+                return;
             }
+
+            let html = '<div class="visualization-grid">';
+
+            // Display static images
+            visualizations.static_images.forEach(image => {
+                html += `
+                    <div class="visualization-item">
+                        <img src="/${image.path}" alt="${image.filename}"
+                             onclick="openImageModal('/${image.path}', '${image.filename}')"
+                             style="width: 100%; height: 200px; object-fit: cover; cursor: pointer; border-radius: 0.5rem;">
+                        <div class="visualization-label">${image.filename}</div>
+                    </div>
+                `;
+            });
+
+            // Display animations
+            if (visualizations.animations && visualizations.animations.length > 0) {
+                html += '<h4 style="grid-column: 1 / -1; margin: 1rem 0;">Animations</h4>';
+                visualizations.animations.forEach(animation => {
+                    html += `
+                        <div class="visualization-item">
+                            <img src="/${animation.path}" alt="${animation.filename}"
+                                 onclick="openImageModal('/${animation.path}', '${animation.filename}')"
+                                 style="width: 100%; height: 200px; object-fit: cover; cursor: pointer; border-radius: 0.5rem;">
+                            <div class="visualization-label">${animation.filename}</div>
+                        </div>
+                    `;
+                });
+            }
+
+            html += '</div>';
+            container.innerHTML = html;
         }
 
-        // Function to update summary table based on selected model
-        document.getElementById('model_select').addEventListener('change', loadAllMetricsAndVisualizations);
+        function openImageModal(imagePath, filename) {
+            // Create modal if it doesn't exist
+            let modal = document.getElementById('imageModal');
+            if (!modal) {
+                modal = document.createElement('div');
+                modal.id = 'imageModal';
+                modal.style.cssText = `
+                    display: none; position: fixed; z-index: 1000; left: 0; top: 0;
+                    width: 100%; height: 100%; background-color: rgba(0,0,0,0.9);
+                `;
+                modal.innerHTML = `
+                    <div style="position: relative; margin: auto; padding: 20px; width: 90%; height: 90%; display: flex; align-items: center; justify-content: center;">
+                        <span onclick="closeImageModal()" style="position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer;">&times;</span>
+                        <img id="modalImage" style="max-width: 100%; max-height: 100%; object-fit: contain;">
+                        <div id="modalCaption" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; text-align: center;"></div>
+                    </div>
+                `;
+                document.body.appendChild(modal);
+            }
 
+            document.getElementById('modalImage').src = imagePath;
+            document.getElementById('modalCaption').textContent = filename;
+            modal.style.display = 'block';
+        }
+
+        function closeImageModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        // Initialize the dashboard
+        document.addEventListener('DOMContentLoaded', function () {
+            // Load initial data
+            loadComparisonData();
+        });
     </script>
 </body>
+
 </html>

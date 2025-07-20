@@ -66,7 +66,11 @@ The project uses the Argoverse 2 dataset and a Graph Attention Network (GAT) to 
 │   ├── *.pt              # Saved model files
 ├── utils/
 │   ├── data_utils.py       # Data loading and preprocessing
-│   └── viz_utils.py        # Visualization utilities
+│   ├── viz_utils.py        # Visualization utilities
+│   ├── cache_manager.py    # Cache management utility
+│   ├── project_utils.py    # Project utility functions
+│   ├── loss_functions.py   # Loss function definitions
+│   └── performance_monitor.py # Performance monitoring
 └── web/
     └── index.html          # Web interface
 ```
@@ -126,6 +130,40 @@ python run_demo.py
 ```
 
 The script will prompt you to select the mode (federated, centralized, or both) and the action (train, test, or both).
+
+### Utility Commands
+
+The project includes several utility commands for managing the system:
+
+**Cache Management:**
+```bash
+# Check cache status
+python -m utils.cache_manager status
+
+# View cache information
+python -m utils.cache_manager info
+
+# Clear cache
+python -m utils.cache_manager clear
+```
+
+**Project Utilities:**
+```bash
+# List project structure
+python -m utils.project_utils list
+
+# Check system status
+python -m utils.project_utils status
+
+# Show utility help
+python -m utils.project_utils help
+```
+
+**Performance Monitoring:**
+```bash
+# Benchmark data loading performance
+python -c "from utils.performance_monitor import benchmark_data_loading; benchmark_data_loading('dataset/train_small', 100, 30)"
+```
 
 ## Models
 

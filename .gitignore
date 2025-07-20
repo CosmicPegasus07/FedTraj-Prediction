@@ -7,3 +7,7 @@ dataset/val/*
 dataset/val_small/*
 *.png
 *.gif
+cache/
+*.pt
+*.json
+!automated_config.json
