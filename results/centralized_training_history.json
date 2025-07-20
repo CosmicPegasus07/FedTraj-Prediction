@@ -510,5 +510,445 @@
                 "val_mr_2m": 1.0
             }
         ]
+    },
+    {
+        "timestamp": "2025-07-19 20:13:57",
+        "model_name": "VectorNet",
+        "epochs_trained": 1,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 7491480.0,
+                "val_loss": 11935940.0,
+                "val_min_ade_k1": 4133.5426025390625,
+                "val_min_fde_k1": 4133.5426025390625,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-19 20:14:20",
+        "model_name": "GATv2",
+        "epochs_trained": 1,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 73458776.0,
+                "val_loss": 13957624.0,
+                "val_min_ade_k1": 4500.77421875,
+                "val_min_fde_k1": 4500.77421875,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-19 20:33:46",
+        "model_name": "GATv2",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 22038349.63828125,
+                "val_loss": 15011155.3453125,
+                "val_min_ade_k1": 4082.159246826172,
+                "val_min_fde_k1": 4082.159246826172,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 8554752.1859375,
+                "val_loss": 12231656.789453125,
+                "val_min_ade_k1": 3712.1102752685547,
+                "val_min_fde_k1": 3712.1102752685547,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-19 20:33:54",
+        "model_name": "VectorNet",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 7361629.7015625,
+                "val_loss": 13009462.79921875,
+                "val_min_ade_k1": 3817.169317626953,
+                "val_min_fde_k1": 3817.169317626953,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 7956005.0625,
+                "val_loss": 12206268.328515625,
+                "val_min_ade_k1": 3704.1415954589843,
+                "val_min_fde_k1": 3704.1415954589843,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-19 20:36:40",
+        "model_name": "GATv2",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 8683019.4625,
+                "val_loss": 12401224.42734375,
+                "val_min_ade_k1": 3735.7211669921876,
+                "val_min_fde_k1": 3735.7211669921876,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 7326596.3421875,
+                "val_loss": 10803248.308203125,
+                "val_min_ade_k1": 3498.8525665283205,
+                "val_min_fde_k1": 3498.8525665283205,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-19 20:36:48",
+        "model_name": "VectorNet",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 5851216.9046875,
+                "val_loss": 12081531.34296875,
+                "val_min_ade_k1": 3687.0307525634767,
+                "val_min_fde_k1": 3687.0307525634767,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 7409465.43125,
+                "val_loss": 11241580.03046875,
+                "val_min_ade_k1": 3567.053482055664,
+                "val_min_fde_k1": 3567.053482055664,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-19 20:38:59",
+        "model_name": "VectorNet",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 8126052.68046875,
+                "val_loss": 11074734.73125,
+                "val_min_ade_k1": 3542.1650787353515,
+                "val_min_fde_k1": 3542.1650787353515,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 6769481.80859375,
+                "val_loss": 9995680.456640625,
+                "val_min_ade_k1": 3379.269088745117,
+                "val_min_fde_k1": 3379.269088745117,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-19 20:39:07",
+        "model_name": "GATv2",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 8383244.725,
+                "val_loss": 10920251.623828124,
+                "val_min_ade_k1": 3515.40595703125,
+                "val_min_fde_k1": 3515.40595703125,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 6142911.9125,
+                "val_loss": 8225726.543359375,
+                "val_min_ade_k1": 3082.65954284668,
+                "val_min_fde_k1": 3082.65954284668,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-20 20:31:25",
+        "model_name": "GATv2",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 17716441.78125,
+                "val_loss": 14025853.61953125,
+                "val_min_ade_k1": 3949.8147216796874,
+                "val_min_fde_k1": 3949.8147216796874,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 8197930.3390625,
+                "val_loss": 12691286.8015625,
+                "val_min_ade_k1": 3767.9418884277343,
+                "val_min_fde_k1": 3767.9418884277343,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-20 20:36:04",
+        "model_name": "GATv2",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 18997380.78203125,
+                "val_loss": 12631605.96484375,
+                "val_min_ade_k1": 3759.777728271484,
+                "val_min_fde_k1": 3759.777728271484,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 7507839.8328125,
+                "val_loss": 11578069.725390624,
+                "val_min_ade_k1": 3607.9190002441405,
+                "val_min_fde_k1": 3607.9190002441405,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-20 20:36:15",
+        "model_name": "VectorNet",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 7905000.02265625,
+                "val_loss": 13386773.84140625,
+                "val_min_ade_k1": 3867.227020263672,
+                "val_min_fde_k1": 3867.227020263672,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 8072502.703125,
+                "val_loss": 12781797.78828125,
+                "val_min_ade_k1": 3780.0432189941407,
+                "val_min_fde_k1": 3780.0432189941407,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-20 21:14:07",
+        "model_name": "GATv2",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 8504493.0,
+                "val_loss": 13818191.4203125,
+                "val_min_ade_k1": 3926.4640197753906,
+                "val_min_fde_k1": 3926.4640197753906,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 8396658.02890625,
+                "val_loss": 13475345.090234375,
+                "val_min_ade_k1": 3878.732553100586,
+                "val_min_fde_k1": 3878.732553100586,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-20 21:14:38",
+        "model_name": "VectorNet",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 8505665.353125,
+                "val_loss": 13627165.909375,
+                "val_min_ade_k1": 3904.2911529541016,
+                "val_min_fde_k1": 3904.2911529541016,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 8236260.315625,
+                "val_loss": 13196185.3203125,
+                "val_min_ade_k1": 3846.127426147461,
+                "val_min_fde_k1": 3846.127426147461,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-20 21:17:25",
+        "model_name": "GATv2",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 48045093.62578125,
+                "val_loss": 13474520.848828126,
+                "val_min_ade_k1": 3879.682357788086,
+                "val_min_fde_k1": 3879.682357788086,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 8192094.8859375,
+                "val_loss": 13180120.67265625,
+                "val_min_ade_k1": 3838.0850677490234,
+                "val_min_fde_k1": 3838.0850677490234,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-20 21:17:35",
+        "model_name": "VectorNet",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 8370641.00234375,
+                "val_loss": 13133838.9234375,
+                "val_min_ade_k1": 3837.2793884277344,
+                "val_min_fde_k1": 3837.2793884277344,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 7938094.575,
+                "val_loss": 12120861.751953125,
+                "val_min_ade_k1": 3693.7133666992186,
+                "val_min_fde_k1": 3693.7133666992186,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-20 21:19:39",
+        "model_name": "VectorNet",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 8364438.78125,
+                "val_loss": 11815941.645703126,
+                "val_min_ade_k1": 3650.477981567383,
+                "val_min_fde_k1": 3650.477981567383,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 7094972.72890625,
+                "val_loss": 11104181.5796875,
+                "val_min_ade_k1": 3542.928024291992,
+                "val_min_fde_k1": 3542.928024291992,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-20 21:19:49",
+        "model_name": "VectorNet",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 8291902.628125,
+                "val_loss": 10491606.0296875,
+                "val_min_ade_k1": 3450.3008209228515,
+                "val_min_fde_k1": 3450.3008209228515,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 6186069.01015625,
+                "val_loss": 8241390.521875,
+                "val_min_ade_k1": 3064.1532348632813,
+                "val_min_fde_k1": 3064.1532348632813,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-20 21:24:10",
+        "model_name": "GATv2",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 8370372.7375,
+                "val_loss": 13733869.4609375,
+                "val_min_ade_k1": 3918.534783935547,
+                "val_min_fde_k1": 3918.534783935547,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 8369740.3140625,
+                "val_loss": 13732842.8453125,
+                "val_min_ade_k1": 3918.356805419922,
+                "val_min_fde_k1": 3918.356805419922,
+                "val_mr_2m": 1.0
+            }
+        ]
+    },
+    {
+        "timestamp": "2025-07-20 21:24:37",
+        "model_name": "VectorNet",
+        "epochs_trained": 2,
+        "learning_rate": 0.001,
+        "history": [
+            {
+                "epoch": 1,
+                "train_loss": 8370104.290625,
+                "val_loss": 13733526.286328126,
+                "val_min_ade_k1": 3918.4728088378906,
+                "val_min_fde_k1": 3918.4728088378906,
+                "val_mr_2m": 1.0
+            },
+            {
+                "epoch": 2,
+                "train_loss": 8369427.67578125,
+                "val_loss": 13732642.000390625,
+                "val_min_ade_k1": 3918.3157440185546,
+                "val_min_fde_k1": 3918.3157440185546,
+                "val_mr_2m": 1.0
+            }
+        ]
     }
 ]

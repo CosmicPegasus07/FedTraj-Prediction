@@ -239,19 +239,26 @@ def create_animation_for_scenario(
         plt.show()
 
 
-def visualize_predictions(batch, model, device, save_dir, prefix="", is_test_mode=False):
+def visualize_predictions(batch, model, device, save_dir, prefix="", is_test_mode=False, seq_len=30):
     """
     Generate and save a prediction visualization for a batch.
     This function assumes batch contains scenario_path and static_map_path attributes.
     """
     import os
+    import json
     os.makedirs(save_dir, exist_ok=True)
     model.eval()
     with torch.no_grad():
         batch = batch.to(device)
-        outputs = model(batch.x, batch.edge_index)
-        focal_global_idx = batch.ptr[:-1] + batch.focal_idx
-        pred = outputs[focal_global_idx].cpu().numpy()
+        outputs = model(batch)
+        outputs = outputs.view(-1, seq_len, 2)
+        pred = outputs.cpu().numpy()
+
+        # Save predictions to JSON
+        pred_save_path = os.path.join(save_dir, f"{prefix}predictions.json")
+        with open(pred_save_path, 'w') as f:
+            json.dump(pred.tolist(), f, indent=4)
+        print(f"[INFO] Saved predictions to: {pred_save_path}")
         
         scenario_path = getattr(batch, 'scenario_path', [None])[0]
         static_map_path = getattr(batch, 'static_map_path', [None])[0]
@@ -261,24 +268,25 @@ def visualize_predictions(batch, model, device, save_dir, prefix="", is_test_mod
             return
 
         gt = None
-        try:
-            scenario = scenario_serialization.load_argoverse_scenario_parquet(scenario_path)
-            focal_track = next(track for track in scenario.tracks if track.track_id == scenario.focal_track_id)
-            
-            gt_traj_points = [
-                object_state.position for object_state in focal_track.object_states
-                if not object_state.observed
-            ]
-            if gt_traj_points:
-                gt = np.array(gt_traj_points)
-        except Exception as e:
-            print(f"[WARN] Could not load ground truth for visualization from {scenario_path}: {e}")
+        if not is_test_mode:
+            try:
+                scenario = scenario_serialization.load_argoverse_scenario_parquet(scenario_path)
+                focal_track = next(track for track in scenario.tracks if track.track_id == scenario.focal_track_id)
+                
+                gt_traj_points = [
+                    object_state.position for object_state in focal_track.object_states
+                    if not object_state.observed
+                ]
+                if gt_traj_points:
+                    gt = np.array(gt_traj_points)
+            except Exception as e:
+                print(f"[WARN] Could not load ground truth for visualization from {scenario_path}: {e}")
 
         save_path = os.path.join(save_dir, f"{prefix}prediction.png")
         plot_argoverse2_with_prediction(
             scenario_path=scenario_path,
             static_map_path=static_map_path,
-            pred_traj_abs=pred,
+            pred_traj_abs=pred[0], # Visualize the first prediction in the batch
             gt_traj_abs=gt,
             title="Trajectory Prediction",
             save_path=save_path
@@ -289,7 +297,7 @@ def visualize_predictions(batch, model, device, save_dir, prefix="", is_test_mod
         create_animation_for_scenario(
             scenario_path=scenario_path,
             static_map_path=static_map_path,
-            pred_traj_abs=pred,
+            pred_traj_abs=pred[0], # Animate the first prediction in the batch
             gt_traj_abs=gt,
             title="Trajectory Animation",
             save_path=anim_save_path

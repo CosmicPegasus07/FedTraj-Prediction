@@ -67,6 +67,7 @@ def main():
     if run_federated_train or run_centralized_train or run_federated_test or run_centralized_test:
         num_scenarios = int(get_input("Number of scenarios per client/test", 5))
         batch_size = int(get_input("Batch size", 1))
+        seq_len = int(get_input("Sequence length for trajectory prediction", 30))
 
     # --- Federated Learning --- #
     if run_federated_train:
@@ -102,7 +103,8 @@ def main():
             batch_size=batch_size,
             num_scenarios=num_scenarios,
             epochs=epochs,
-            lr=lr
+            lr=lr,
+            seq_len=seq_len
         )
         print("[INFO] Centralized training finished.")
 
@@ -114,7 +116,8 @@ def main():
             test_dir=test_dir,
             batch_size=batch_size,
             num_scenarios=num_scenarios,
-            visualize_limit=visualize_limit
+            visualize_limit=visualize_limit,
+            seq_len=seq_len
         )
         print("[INFO] Centralized model testing and visualization complete.")
 
@@ -125,7 +128,8 @@ def main():
             test_dir=test_dir,
             batch_size=batch_size,
             num_scenarios=num_scenarios,
-            visualize_limit=visualize_limit
+            visualize_limit=visualize_limit,
+            seq_len=seq_len
         )
         print("[INFO] Federated model testing and visualization complete.")
 

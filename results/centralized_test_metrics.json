@@ -94,5 +94,157 @@
         "test_min_ade_k1": 1902.959912109375,
         "test_min_fde_k1": 1902.959912109375,
         "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:33:48",
+        "model_name": "GATv2",
+        "test_loss": 3208.669620132446,
+        "test_min_ade_k1": 63.35211935043335,
+        "test_min_fde_k1": 63.35211935043335,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:33:55",
+        "model_name": "VectorNet",
+        "test_loss": 11985.40495147705,
+        "test_min_ade_k1": 123.7332956314087,
+        "test_min_fde_k1": 123.7332956314087,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:36:41",
+        "model_name": "GATv2",
+        "test_loss": 12161.262571716308,
+        "test_min_ade_k1": 121.92756042480468,
+        "test_min_fde_k1": 121.92756042480468,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:36:49",
+        "model_name": "VectorNet",
+        "test_loss": 24464.58853149414,
+        "test_min_ade_k1": 178.56360778808593,
+        "test_min_fde_k1": 178.56360778808593,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:39:00",
+        "model_name": "VectorNet",
+        "test_loss": 48291.99781494141,
+        "test_min_ade_k1": 249.73227233886718,
+        "test_min_fde_k1": 249.73227233886718,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:39:08",
+        "model_name": "GATv2",
+        "test_loss": 35158.21249084473,
+        "test_min_ade_k1": 204.91164016723633,
+        "test_min_fde_k1": 204.91164016723633,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:45:13",
+        "model_name": "VectorNet",
+        "test_loss": 539.7569580078125,
+        "test_min_ade_k1": 32.85595703125,
+        "test_min_fde_k1": 32.85595703125,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:45:52",
+        "model_name": "VectorNet",
+        "test_loss": 539.757080078125,
+        "test_min_ade_k1": 32.85595893859863,
+        "test_min_fde_k1": 32.85595893859863,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:47:31",
+        "model_name": "VectorNet",
+        "test_loss": 539.757080078125,
+        "test_min_ade_k1": 32.855960845947266,
+        "test_min_fde_k1": 32.855960845947266,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:48:22",
+        "model_name": "VectorNet",
+        "test_loss": 539.75732421875,
+        "test_min_ade_k1": 32.8559684753418,
+        "test_min_fde_k1": 32.8559684753418,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:50:22",
+        "model_name": "VectorNet",
+        "test_loss": 539.7572021484375,
+        "test_min_ade_k1": 32.8559627532959,
+        "test_min_fde_k1": 32.8559627532959,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:50:58",
+        "model_name": "VectorNet",
+        "test_loss": 539.757080078125,
+        "test_min_ade_k1": 32.855960845947266,
+        "test_min_fde_k1": 32.855960845947266,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-20 20:31:26",
+        "model_name": "GATv2",
+        "test_loss": 7850.22277393341,
+        "test_min_ade_k1": 97.54966726303101,
+        "test_min_fde_k1": 97.54966726303101,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-20 20:36:05",
+        "model_name": "GATv2",
+        "test_loss": 13465.478567504882,
+        "test_min_ade_k1": 129.19791164398194,
+        "test_min_fde_k1": 129.19791164398194,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-20 20:36:16",
+        "model_name": "VectorNet",
+        "test_loss": 6196.55919342041,
+        "test_min_ade_k1": 88.17459421157837,
+        "test_min_fde_k1": 88.17459421157837,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-20 21:19:40",
+        "model_name": "VectorNet",
+        "test_loss": 21135.99137573242,
+        "test_min_ade_k1": 153.93205337524415,
+        "test_min_fde_k1": 153.93205337524415,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-20 21:19:50",
+        "model_name": "VectorNet",
+        "test_loss": 93019.9574584961,
+        "test_min_ade_k1": 314.93483848571776,
+        "test_min_fde_k1": 314.93483848571776,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-20 21:24:12",
+        "model_name": "GATv2",
+        "test_loss": 0.2753826916217804,
+        "test_min_ade_k1": 0.6728391408920288,
+        "test_min_fde_k1": 0.6728391408920288,
+        "test_mr_2m": 0.0
+    },
+    {
+        "timestamp": "2025-07-20 21:24:38",
+        "model_name": "VectorNet",
+        "test_loss": 0.232581290602684,
+        "test_min_ade_k1": 0.6504515647888184,
+        "test_min_fde_k1": 0.6504515647888184,
+        "test_mr_2m": 0.0
     }
 ]

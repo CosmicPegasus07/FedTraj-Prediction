@@ -38,5 +38,37 @@
         "test_min_ade_k1": 1359.3045837402344,
         "test_min_fde_k1": 1359.3045837402344,
         "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:42:54",
+        "model_name": "GATv2",
+        "test_loss": 5159.117443847656,
+        "test_min_ade_k1": 86.9784595489502,
+        "test_min_fde_k1": 86.9784595489502,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-19 20:43:06",
+        "model_name": "VectorNet",
+        "test_loss": 757.2995927810668,
+        "test_min_ade_k1": 30.31074242591858,
+        "test_min_fde_k1": 30.31074242591858,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-20 20:38:58",
+        "model_name": "GATv2",
+        "test_loss": 13902.96706237793,
+        "test_min_ade_k1": 132.36310596466063,
+        "test_min_fde_k1": 132.36310596466063,
+        "test_mr_2m": 1.0
+    },
+    {
+        "timestamp": "2025-07-20 21:30:03",
+        "model_name": "GATv2",
+        "test_loss": 0.05806232467293739,
+        "test_min_ade_k1": 0.2990624845027924,
+        "test_min_fde_k1": 0.2990624845027924,
+        "test_mr_2m": 0.0
     }
 ]
