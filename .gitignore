@@ -5,9 +5,10 @@ dataset/train/*
 dataset/train_small/*
 dataset/val/*
 dataset/val_small/*
-*.png
-*.gif
 cache/
-*.pt
-*.json
 !automated_config.json
+*.json
+*.pt
+*.gif
+# Environment variables (contains sensitive information)
+.env

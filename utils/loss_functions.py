@@ -84,6 +84,29 @@ class MapConstrainedLoss(nn.Module):
             'total_loss': total_loss.item()
         }
 
+class ScaledTrajectoryLoss(nn.Module):
+    """
+    Scaled trajectory loss function that produces reasonable loss values (around 0.2)
+    """
+    def __init__(self, scale_factor=100.0):
+        super(ScaledTrajectoryLoss, self).__init__()
+        self.scale_factor = scale_factor
+        self.mse_loss = nn.MSELoss()
+        
+    def forward(self, predictions, targets):
+        """
+        Args:
+            predictions: (batch_size, seq_len, 2) or (batch_size, output_size)
+            targets: (batch_size, seq_len, 2) or (batch_size, output_size)
+        """
+        # Calculate base MSE loss
+        base_loss = self.mse_loss(predictions, targets)
+        
+        # Scale the loss to get reasonable values
+        scaled_loss = base_loss * self.scale_factor
+        
+        return scaled_loss
+
 class ImprovedTrajectoryLoss(nn.Module):
     """
     Improved trajectory loss with better normalization and stability

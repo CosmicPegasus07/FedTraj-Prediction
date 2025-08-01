@@ -364,6 +364,9 @@ class ArgoversePyGDataset(PyGDataset):
 
         except Exception as e:
             print(f"[WARNING] Multiprocessing failed with error: {e}")
+            # For VectorNet, this is expected in federated mode, so don't log as warning
+            if not (hasattr(self, '_is_vectornet_federated') and self._is_vectornet_federated):
+                print(f"[WARNING] Falling back to sequential processing")
             return False
 
     def _process_sequentially(self, scenario_paths, global_stats):
@@ -434,7 +437,7 @@ def custom_collate(batch):
     
     return collated_batch
 
-def get_pyg_data_loader(scenario_dir, batch_size=32, num_scenarios=-1, selection_criteria="first", shuffle=True, mode='train', client_id=None, num_clients=None, seq_len=30, num_workers=None, use_multiprocessing=None):
+def get_pyg_data_loader(scenario_dir, batch_size=32, num_scenarios=-1, selection_criteria="first", shuffle=True, mode='train', client_id=None, num_clients=None, seq_len=30, num_workers=None, use_multiprocessing=None, model_name=None):
     """
     Create optimized PyG data loader with multiprocessing and caching
 
@@ -464,16 +467,24 @@ def get_pyg_data_loader(scenario_dir, batch_size=32, num_scenarios=-1, selection
     # Auto-detect multiprocessing usage
     if use_multiprocessing is None:
         # Disable multiprocessing for small datasets or if we've had issues
-        use_multiprocessing = len(scenario_files) > 50
+        # Also disable for any federated mode to prevent memory issues when running multiple clients
+        if client_id is not None:
+            use_multiprocessing = False
+            print(f"[INFO] Disabling multiprocessing for {model_name or 'model'} in federated mode (client {client_id})")
+        else:
+            use_multiprocessing = len(scenario_files) > 50
 
-    # Determine number of workers (more conservative)
+    # Determine number of workers (more conservative, especially for federated mode)
     if num_workers is None:
-        if len(scenario_files) < 100:
+        if client_id is not None:
+            # In federated mode, always use 1 worker to prevent resource conflicts
+            num_workers = 1
+        elif len(scenario_files) < 100:
             num_workers = 1  # Sequential for very small datasets
         elif len(scenario_files) < 500:
             num_workers = 2
         else:
-            num_workers = min(4, mp.cpu_count() // 2)  # More conservative
+            num_workers = min(4, mp.cpu_count() // 2)  # Normal for centralized mode
 
     dataset = ArgoversePyGDataset(
         scenario_files,
@@ -482,6 +493,10 @@ def get_pyg_data_loader(scenario_dir, batch_size=32, num_scenarios=-1, selection
         num_workers=num_workers,
         use_multiprocessing=use_multiprocessing
     )
+    
+    # Mark dataset for special handling if VectorNet in federated mode
+    if model_name == "VectorNet" and client_id is not None:
+        dataset._is_vectornet_federated = True
 
     if len(dataset) == 0:
         print("[WARNING] Created an empty dataset. No valid scenarios found.")

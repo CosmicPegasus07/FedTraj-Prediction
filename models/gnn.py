@@ -30,7 +30,6 @@ class GATv2TrajectoryPredictor(nn.Module):
         self.dropout = nn.Dropout(0.3)
 
     def forward(self, data):
-        print(f"[DEBUG GNN] Input data.x shape: {data.x.shape}")
         agent_x = data.x.view(data.x.size(0), -1)
         agent_x = torch.relu(self.agent_embedding(agent_x))
 

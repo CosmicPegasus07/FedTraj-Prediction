@@ -622,6 +622,9 @@
                     <h2 class="card-title">
                         <i class="fas fa-chart-line"></i> Performance Metrics Comparison
                     </h2>
+                    <button class="btn btn-secondary" onclick="loadComparisonData()" title="Refresh data">
+                        <i class="fas fa-sync-alt"></i> Refresh
+                    </button>
                 </div>
                 <div id="comparison_content">
                     <div class="alert alert-info">
@@ -691,12 +694,15 @@
                     <h2 class="card-title">
                         <i class="fas fa-images"></i> Trajectory Predictions Visualizations
                     </h2>
-                    <div>
+                    <div style="display: flex; gap: 1rem; align-items: center;">
                         <select id="viz_model_select" class="form-select" style="width: auto;"
                             onchange="loadVisualizations()">
                             <option value="GATv2">GATv2</option>
                             <option value="VectorNet">VectorNet</option>
                         </select>
+                        <button class="btn btn-secondary" onclick="loadVisualizations()" title="Refresh visualizations">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
                     </div>
                 </div>
 
@@ -737,6 +743,9 @@
     <div id="imageModal" class="modal">
         <span class="modal-close" onclick="closeImageModal()">&times;</span>
         <img class="modal-content" id="modalImage">
+        <div id="modalCaption"
+            style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; text-align: center; z-index: 1001;">
+        </div>
     </div>
 
     <script>
@@ -1091,7 +1100,15 @@
                 return;
             }
 
-            let html = '<div class="grid grid-2">';
+            // Add timestamp
+            const timestamp = new Date().toLocaleString();
+
+            let html = `
+                <div style="text-align: right; margin-bottom: 1rem; font-size: 0.875rem; color: var(--text-secondary);">
+                    <i class="fas fa-clock"></i> Last updated: ${timestamp}
+                </div>
+                <div class="grid grid-2">
+            `;
 
             // Centralized summary
             if (comparisonData.centralized.training) {
@@ -1213,19 +1230,41 @@
             }
 
             // Add federated training data
-            if (fedTraining && fedTraining.history) {
-                const fedLosses = fedTraining.history.map(epoch => epoch.train_loss || epoch.loss || 0);
-                labels.length = Math.max(labels.length, fedLosses.length);
-                for (let i = 0; i < fedLosses.length; i++) {
-                    labels[i] = `Epoch ${i + 1}`;
+            if (fedTraining) {
+                let fedLosses = [];
+                let fedLabels = [];
+
+                if (fedTraining.round_metrics && fedTraining.round_metrics.length > 0) {
+                    // Use per-round metrics if available (new format)
+                    fedLosses = fedTraining.round_metrics.map(round => round.loss || round.training_loss || 0);
+                    fedLabels = fedTraining.round_metrics.map(round => `Round ${round.round}`);
+                } else if (fedTraining.training_history && fedTraining.training_history.length > 0) {
+                    // Use training_history if available (old format compatibility)
+                    fedLosses = fedTraining.training_history.map(round => round.loss || round.training_loss || 0);
+                    fedLabels = fedTraining.training_history.map(round => `Round ${round.round}`);
+                } else if (fedTraining.history) {
+                    // Fallback to history if available
+                    fedLosses = fedTraining.history.map(epoch => epoch.train_loss || epoch.loss || 0);
+                    fedLabels = fedTraining.history.map((epoch, i) => `Epoch ${i + 1}`);
                 }
-                datasets.push({
-                    label: 'Federated Training Loss',
-                    data: fedLosses,
-                    borderColor: '#7c3aed',
-                    backgroundColor: 'rgba(124, 58, 237, 0.1)',
-                    tension: 0.4
-                });
+
+                if (fedLosses.length > 0) {
+                    labels.length = Math.max(labels.length, fedLosses.length);
+                    for (let i = 0; i < fedLosses.length; i++) {
+                        if (fedLabels[i]) {
+                            labels[i] = fedLabels[i];
+                        } else {
+                            labels[i] = `Round ${i + 1}`;
+                        }
+                    }
+                    datasets.push({
+                        label: 'Federated Training Loss',
+                        data: fedLosses,
+                        borderColor: '#7c3aed',
+                        backgroundColor: 'rgba(124, 58, 237, 0.1)',
+                        tension: 0.4
+                    });
+                }
             }
 
             if (datasets.length === 0) {
@@ -1262,7 +1301,7 @@
                         x: {
                             title: {
                                 display: true,
-                                text: 'Training Epochs'
+                                text: 'Training Progress'
                             }
                         }
                     }
@@ -1281,6 +1320,8 @@
 
             const centTesting = comparisonData.centralized?.testing;
             const fedTesting = comparisonData.federated?.testing;
+            const centTraining = comparisonData.centralized?.training;
+            const fedTraining = comparisonData.federated?.training;
 
             if (!centTesting && !fedTesting) {
                 ctx.style.display = 'none';
@@ -1292,6 +1333,21 @@
             const labels = ['Test Loss', 'Min ADE (K=1)', 'Min FDE (K=1)', 'Miss Rate (2m)'];
             const datasets = [];
 
+            // Get MR2M from training data
+            let centMR2M = 0;
+            let fedMR2M = 0;
+
+            // For centralized: get from last epoch in history
+            if (centTraining?.history && centTraining.history.length > 0) {
+                const lastEpoch = centTraining.history[centTraining.history.length - 1];
+                centMR2M = lastEpoch.val_mr_2m || 0;
+            }
+
+            // For federated: get from final_metrics
+            if (fedTraining?.final_metrics) {
+                fedMR2M = fedTraining.final_metrics.mr_2m || 0;
+            }
+
             // Add centralized test data
             if (centTesting) {
                 datasets.push({
@@ -1300,7 +1356,7 @@
                         centTesting.test_loss || 0,
                         centTesting.test_min_ade_k1 || 0,
                         centTesting.test_min_fde_k1 || 0,
-                        centTesting.test_mr_2m || 0
+                        centMR2M
                     ],
                     backgroundColor: 'rgba(37, 99, 235, 0.8)',
                     borderColor: '#2563eb',
@@ -1316,7 +1372,7 @@
                         fedTesting.test_loss || 0,
                         fedTesting.test_min_ade_k1 || 0,
                         fedTesting.test_min_fde_k1 || 0,
-                        fedTesting.test_mr_2m || 0
+                        fedMR2M
                     ],
                     backgroundColor: 'rgba(124, 58, 237, 0.8)',
                     borderColor: '#7c3aed',
@@ -1366,6 +1422,8 @@
 
             const centTesting = comparisonData.centralized?.testing;
             const fedTesting = comparisonData.federated?.testing;
+            const centTraining = comparisonData.centralized?.training;
+            const fedTraining = comparisonData.federated?.training;
 
             if (!centTesting && !fedTesting) {
                 tbody.innerHTML = `
@@ -1378,19 +1436,43 @@
                 return;
             }
 
+            // Get MR2M from training data
+            let centMR2M = null;
+            let fedMR2M = null;
+
+            // For centralized: get from last epoch in history
+            if (centTraining?.history && centTraining.history.length > 0) {
+                const lastEpoch = centTraining.history[centTraining.history.length - 1];
+                centMR2M = lastEpoch.val_mr_2m;
+            }
+
+            // For federated: get from final_metrics
+            if (fedTraining?.final_metrics) {
+                fedMR2M = fedTraining.final_metrics.mr_2m;
+            }
+
             let html = '';
             const metrics = [
                 { name: 'Test Loss', cent: centTesting?.test_loss, fed: fedTesting?.test_loss },
                 { name: 'Min ADE (K=1)', cent: centTesting?.test_min_ade_k1, fed: fedTesting?.test_min_ade_k1 },
                 { name: 'Min FDE (K=1)', cent: centTesting?.test_min_fde_k1, fed: fedTesting?.test_min_fde_k1 },
-                { name: 'Miss Rate (2m)', cent: centTesting?.test_mr_2m, fed: fedTesting?.test_mr_2m }
+                { name: 'Miss Rate (2m)', cent: centMR2M, fed: fedMR2M }
             ];
 
             metrics.forEach(metric => {
                 const centVal = metric.cent?.toFixed(4) || 'N/A';
                 const fedVal = metric.fed?.toFixed(4) || 'N/A';
-                const diff = (metric.cent && metric.fed) ? (metric.fed - metric.cent).toFixed(4) : 'N/A';
-                const gap = (metric.cent && metric.fed) ? ((metric.fed - metric.cent) / metric.cent * 100).toFixed(2) + '%' : 'N/A';
+
+                // Make difference absolute (no + or - signs)
+                const diff = (metric.cent && metric.fed) ? Math.abs(metric.fed - metric.cent).toFixed(4) : 'N/A';
+
+                // Make performance gap absolute (no + or - signs)
+                let gap = 'N/A';
+                if (metric.cent && metric.fed) {
+                    const improvement = metric.cent - metric.fed; // Positive when federated is better
+                    const percentage = Math.abs((improvement / metric.cent * 100)).toFixed(2);
+                    gap = `${percentage}%`;
+                }
 
                 html += `
                     <tr>
@@ -1505,39 +1587,65 @@
         }
 
         function openImageModal(imagePath, filename) {
-            // Create modal if it doesn't exist
-            let modal = document.getElementById('imageModal');
-            if (!modal) {
-                modal = document.createElement('div');
-                modal.id = 'imageModal';
-                modal.style.cssText = `
-                    display: none; position: fixed; z-index: 1000; left: 0; top: 0;
-                    width: 100%; height: 100%; background-color: rgba(0,0,0,0.9);
-                `;
-                modal.innerHTML = `
-                    <div style="position: relative; margin: auto; padding: 20px; width: 90%; height: 90%; display: flex; align-items: center; justify-content: center;">
-                        <span onclick="closeImageModal()" style="position: absolute; top: 15px; right: 35px; color: #f1f1f1; font-size: 40px; font-weight: bold; cursor: pointer;">&times;</span>
-                        <img id="modalImage" style="max-width: 100%; max-height: 100%; object-fit: contain;">
-                        <div id="modalCaption" style="position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); color: white; text-align: center;"></div>
-                    </div>
-                `;
-                document.body.appendChild(modal);
-            }
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const modalCaption = document.getElementById('modalCaption');
 
-            document.getElementById('modalImage').src = imagePath;
-            document.getElementById('modalCaption').textContent = filename;
-            modal.style.display = 'block';
+            if (modal && modalImage && modalCaption) {
+                modalImage.src = imagePath;
+                modalCaption.textContent = filename;
+                modal.style.display = 'block';
+            }
         }
 
         function closeImageModal() {
-            document.getElementById('imageModal').style.display = 'none';
+            const modal = document.getElementById('imageModal');
+            if (modal) {
+                modal.style.display = 'none';
+            }
         }
 
         // Initialize the dashboard
         document.addEventListener('DOMContentLoaded', function () {
             // Load initial data
             loadComparisonData();
+
+            // Set up auto-refresh for comparison data (every 30 seconds)
+            setInterval(() => {
+                loadComparisonData();
+            }, 30000); // Refresh every 30 seconds
+
+            // Set up auto-refresh for visualizations (every 60 seconds)
+            setInterval(() => {
+                const currentModel = document.getElementById('viz_model_select')?.value || 'GATv2';
+                loadVisualizations();
+            }, 60000); // Refresh every 60 seconds
+
+            // Check for data updates every 10 seconds
+            setInterval(() => {
+                checkForDataUpdates();
+            }, 10000); // Check every 10 seconds
         });
+
+        // Function to check for data updates
+        function checkForDataUpdates() {
+            fetch('/get_comparison_data')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.status === 'success' && data.data) {
+                        const currentData = JSON.stringify(data.data);
+                        if (currentData !== JSON.stringify(comparisonData)) {
+                            // Data has changed, show notification
+                            showStatusMessage('New training data available! Refreshing...', 'success');
+                            comparisonData = data.data;
+                            loadComparisonData();
+                        }
+                    }
+                })
+                .catch(error => {
+                    console.error('Error checking for data updates:', error);
+                });
+        }
     </script>
 </body>
 

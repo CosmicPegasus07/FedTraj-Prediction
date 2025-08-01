@@ -1,0 +1,18 @@
+[
+    {
+        "timestamp": "2025-08-03 16:20:29",
+        "model_name": "VectorNet",
+        "test_loss": 3.7856016088934505,
+        "test_min_ade_k1": 0.245365709066391,
+        "test_min_fde_k1": 0.4467589855194092,
+        "test_mr_2m": 0.0
+    },
+    {
+        "timestamp": "2025-08-03 16:25:51",
+        "model_name": "VectorNet",
+        "test_loss": 3.7856016088934505,
+        "test_min_ade_k1": 0.245365709066391,
+        "test_min_fde_k1": 0.4467589855194092,
+        "test_mr_2m": 0.0
+    }
+]
