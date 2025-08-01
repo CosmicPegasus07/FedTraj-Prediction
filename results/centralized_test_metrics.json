@@ -1,0 +1,82 @@
+[
+    {
+        "timestamp": "2025-08-01 17:12:47",
+        "model_name": "GATv2",
+        "test_loss": 0.027081605046987534,
+        "test_min_ade_k1": 0.21060798466205596,
+        "test_min_fde_k1": 0.21060798466205596,
+        "test_mr_2m": 0.0
+    },
+    {
+        "timestamp": "2025-08-01 17:14:35",
+        "model_name": "VectorNet",
+        "test_loss": 0.10033579170703888,
+        "test_min_ade_k1": 0.3951043486595154,
+        "test_min_fde_k1": 0.3951043486595154,
+        "test_mr_2m": 0.0
+    },
+    {
+        "timestamp": "2025-08-01 17:28:09",
+        "model_name": "GATv2",
+        "test_loss": 0.010916684754192829,
+        "test_min_ade_k1": 0.13263043761253357,
+        "test_min_fde_k1": 0.13263043761253357,
+        "test_mr_2m": 0.0
+    },
+    {
+        "timestamp": "2025-08-01 17:30:05",
+        "model_name": "VectorNet",
+        "test_loss": 0.040446046739816666,
+        "test_min_ade_k1": 0.25539869964122774,
+        "test_min_fde_k1": 0.25539869964122774,
+        "test_mr_2m": 0.0
+    },
+    {
+        "timestamp": "2025-08-01 18:09:56",
+        "model_name": "GATv2",
+        "test_loss": 0.009453902952373028,
+        "test_min_ade_k1": 0.12387119978666306,
+        "test_min_fde_k1": 0.13730573654174805,
+        "test_mr_2m": 0.0
+    },
+    {
+        "timestamp": "2025-08-01 18:11:19",
+        "model_name": "VectorNet",
+        "test_loss": 0.13643383979797363,
+        "test_min_ade_k1": 0.484293007850647,
+        "test_min_fde_k1": 0.37496921718120574,
+        "test_mr_2m": 0.0
+    },
+    {
+        "timestamp": "2025-08-01 21:07:48",
+        "model_name": "GATv2",
+        "test_loss": 0.00046139821600210034,
+        "test_min_ade_k1": 0.027740193530917168,
+        "test_min_fde_k1": 0.04659748822450638,
+        "test_mr_2m": 0.0
+    },
+    {
+        "timestamp": "2025-08-01 21:25:28",
+        "model_name": "VectorNet",
+        "test_loss": 0.00018171023111790419,
+        "test_min_ade_k1": 0.015757909044623375,
+        "test_min_fde_k1": 0.03460654243826866,
+        "test_mr_2m": 0.0
+    },
+    {
+        "timestamp": "2025-08-01 23:58:16",
+        "model_name": "GATv2",
+        "test_loss": 0.02879384529831655,
+        "test_min_ade_k1": 0.01982826180756092,
+        "test_min_fde_k1": 0.04307573661208153,
+        "test_mr_2m": 0.0
+    },
+    {
+        "timestamp": "2025-08-02 00:17:21",
+        "model_name": "VectorNet",
+        "test_loss": 0.023409364772412705,
+        "test_min_ade_k1": 0.018963836133480072,
+        "test_min_fde_k1": 0.03716999292373657,
+        "test_mr_2m": 0.0
+    }
+]

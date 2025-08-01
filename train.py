@@ -21,9 +21,12 @@ def get_model(model_name, in_channels, hidden_channels, out_channels, seq_len=30
 
 def evaluate(model, loader, device, seq_len=30):
     model.eval()
-    criterion = torch.nn.MSELoss()
+    # Use scaled loss function for consistent evaluation
+    from utils.loss_functions import ScaledTrajectoryLoss
+    criterion = ScaledTrajectoryLoss(scale_factor=100.0)
     total_loss = 0
     all_displacement_errors = []
+    all_final_displacement_errors = []
     
     with torch.no_grad():
         for batch in loader:
@@ -39,15 +42,25 @@ def evaluate(model, loader, device, seq_len=30):
 
             pred_np = outputs.cpu().numpy()
             gt_np = labels.cpu().numpy()
-            displacement_error = np.linalg.norm(pred_np - gt_np, axis=2).mean(axis=1)
-            all_displacement_errors.extend(displacement_error.tolist())
+            
+            # Calculate displacement errors for each trajectory
+            displacement_error = np.linalg.norm(pred_np - gt_np, axis=2)  # Shape: (batch_size, seq_len)
+            
+            # Average displacement error (ADE) - mean over all timesteps
+            ade_per_traj = displacement_error.mean(axis=1)
+            all_displacement_errors.extend(ade_per_traj.tolist())
+            
+            # Final displacement error (FDE) - error at the last timestep
+            fde_per_traj = displacement_error[:, -1]  # Last timestep
+            all_final_displacement_errors.extend(fde_per_traj.tolist())
 
     avg_loss = total_loss / len(loader)
     
     if all_displacement_errors:
         min_ade_k1 = np.mean(all_displacement_errors)
-        min_fde_k1 = np.mean(all_displacement_errors)
-        mr_2m = np.mean(np.array(all_displacement_errors) > 2.0)
+        min_fde_k1 = np.mean(all_final_displacement_errors)
+        # MR2M should be based on FDE (final displacement error), not ADE
+        mr_2m = np.mean(np.array(all_final_displacement_errors) > 2.0)
     else:
         min_ade_k1 = float('inf')
         min_fde_k1 = float('inf')
@@ -62,12 +75,12 @@ def centralized_train(train_dir, val_dir, batch_size=32, num_scenarios=-1, epoch
     # Use more conservative settings for data loading
     train_loader = get_pyg_data_loader(
         train_dir, batch_size, num_scenarios, shuffle=True, mode='train', seq_len=seq_len,
-        use_multiprocessing=True  # Try multiprocessing first, will fallback if needed
+        use_multiprocessing=True, model_name=model_name  # Pass model name for memory optimization
     )
     val_loader = get_pyg_data_loader(
         val_dir, batch_size, min(num_scenarios, 500) if num_scenarios > 0 else 500,
         shuffle=False, mode='val', seq_len=seq_len,
-        use_multiprocessing=True  # Try multiprocessing first, will fallback if needed
+        use_multiprocessing=True, model_name=model_name  # Pass model name for memory optimization
     )
 
     if not train_loader:
@@ -88,7 +101,9 @@ def centralized_train(train_dir, val_dir, batch_size=32, num_scenarios=-1, epoch
     else:
         print("[INFO] Model not found, starting fresh.")
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
-    criterion = torch.nn.MSELoss()
+    # Use scaled loss function for better loss values
+    from utils.loss_functions import ScaledTrajectoryLoss
+    criterion = ScaledTrajectoryLoss(scale_factor=100.0)
 
     model.train()
     history = []

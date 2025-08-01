@@ -71,7 +71,9 @@ class FlowerClient(fl.client.NumPyClient):
         return float(loss), dataset_size, {"loss": float(loss), "min_ade_k1": float(min_ade_k1), "min_fde_k1": float(min_fde_k1), "mr_2m": float(mr_2m)}
 
 def train(model, trainloader, valloader, epochs, lr, device):
-    criterion = torch.nn.MSELoss()
+    # Use scaled loss function for better loss values
+    from utils.loss_functions import ScaledTrajectoryLoss
+    criterion = ScaledTrajectoryLoss(scale_factor=100.0)
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
     model.train()
     for epoch in range(epochs):
@@ -92,10 +94,13 @@ def train(model, trainloader, valloader, epochs, lr, device):
         return 0.0, 0.0, 0.0, 0.0
 
 def test(model, testloader, device):
-    criterion = torch.nn.MSELoss()
+    # Use scaled loss function for consistent testing
+    from utils.loss_functions import ScaledTrajectoryLoss
+    criterion = ScaledTrajectoryLoss(scale_factor=100.0)
     model.eval()
     total_loss = 0
     all_displacement_errors = []
+    all_final_displacement_errors = []
     with torch.no_grad():
         for batch in testloader:
             batch = batch.to(device)
@@ -106,12 +111,23 @@ def test(model, testloader, device):
             total_loss += loss.item()
             pred_np = outputs.cpu().numpy()
             gt_np = labels.cpu().numpy()
-            displacement_error = np.linalg.norm(pred_np - gt_np, axis=1)
-            all_displacement_errors.extend(displacement_error.tolist())
+            
+            # Calculate displacement errors for each trajectory
+            displacement_error = np.linalg.norm(pred_np - gt_np, axis=2)  # Shape: (batch_size, seq_len)
+            
+            # Average displacement error (ADE) - mean over all timesteps
+            ade_per_traj = displacement_error.mean(axis=1)
+            all_displacement_errors.extend(ade_per_traj.tolist())
+            
+            # Final displacement error (FDE) - error at the last timestep
+            fde_per_traj = displacement_error[:, -1]  # Last timestep
+            all_final_displacement_errors.extend(fde_per_traj.tolist())
+            
     avg_loss = total_loss / len(testloader)
     min_ade_k1 = np.mean(all_displacement_errors)
-    min_fde_k1 = np.mean(all_displacement_errors)
-    mr_2m = np.mean(np.array(all_displacement_errors) > 2.0)
+    min_fde_k1 = np.mean(all_final_displacement_errors)
+    # MR2M should be based on FDE (final displacement error), not ADE
+    mr_2m = np.mean(np.array(all_final_displacement_errors) > 2.0)
     return avg_loss, min_ade_k1, min_fde_k1, mr_2m
 
 def main(model_name="GATv2", seq_len=30):
@@ -140,12 +156,12 @@ def main(model_name="GATv2", seq_len=30):
     train_loader = get_pyg_data_loader(
         args.train_dir, batch_size=args.batch_size, num_scenarios=args.num_scenarios,
         shuffle=True, mode='train', client_id=args.client_id, num_clients=args.num_clients,
-        seq_len=args.seq_len, use_multiprocessing=True
+        seq_len=args.seq_len, use_multiprocessing=True, model_name=args.model_name
     )
     val_loader = get_pyg_data_loader(
         args.val_dir, batch_size=args.batch_size,
         num_scenarios=min(args.num_scenarios, 200) if args.num_scenarios > 0 else 200,
-        shuffle=False, mode='val', seq_len=args.seq_len, use_multiprocessing=True
+        shuffle=False, mode='val', seq_len=args.seq_len, use_multiprocessing=True, model_name=args.model_name
     )
 
     if not train_loader:

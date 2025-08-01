@@ -28,13 +28,16 @@ def weighted_average(metrics):
     avg_mr_2m = sum(num_examples * m["mr_2m"] for num_examples, m in weighted_metrics) / total_examples
     return {"loss": avg_loss, "min_ade_k1": avg_min_ade_k1, "min_fde_k1": avg_min_fde_k1, "mr_2m": avg_mr_2m}
 
+# Global variable to store per-round metrics for logging
+round_training_history = []
+
 def get_on_fit_config_fn(args):
     def fit_config(server_round: int):
         return {
             "learning_rate": args.lr,
+            "epochs": args.client_epochs,
             "current_round": server_round,
             "total_rounds": args.rounds,
-            "epochs": args.client_epochs
         }
     return fit_config
 
@@ -42,9 +45,38 @@ def get_on_evaluate_config_fn(args):
     def evaluate_config(server_round: int):
         return {
             "current_round": server_round,
-            "total_rounds": args.rounds
+            "total_rounds": args.rounds,
         }
     return evaluate_config
+
+def fit_metrics_aggregation_fn(fit_metrics):
+    """Custom fit metrics aggregation function that logs per-round training metrics"""
+    global round_training_history
+    
+    # Calculate weighted average training metrics
+    aggregated_metrics = weighted_average(fit_metrics)
+    
+    # Log the round training metrics
+    round_data = {
+        "round": len(round_training_history) + 1,
+        "loss": aggregated_metrics["loss"],  # Frontend expects 'loss', not 'training_loss'
+        "training_loss": aggregated_metrics["loss"],  # Keep both for compatibility
+        "min_ade_k1": aggregated_metrics["min_ade_k1"],  # Frontend expects this format
+        "min_fde_k1": aggregated_metrics["min_fde_k1"],  # Frontend expects this format
+        "mr_2m": aggregated_metrics["mr_2m"],  # Frontend expects this format
+        "training_min_ade_k1": aggregated_metrics["min_ade_k1"],  # Keep both for compatibility
+        "training_min_fde_k1": aggregated_metrics["min_fde_k1"],  # Keep both for compatibility
+        "training_mr_2m": aggregated_metrics["mr_2m"],  # Keep both for compatibility
+        "num_clients": len(fit_metrics)
+    }
+    
+    round_training_history.append(round_data)
+    
+    print(f"[Server INFO] Round {round_data['round']} Training - Loss: {round_data['loss']:.6f}, "
+          f"ADE: {round_data['min_ade_k1']:.6f}, FDE: {round_data['min_fde_k1']:.6f}, "
+          f"MR: {round_data['mr_2m']:.6f}")
+    
+    return aggregated_metrics
 
 def main():
     parser = argparse.ArgumentParser(description="Flower Federated Learning Server")
@@ -67,6 +99,9 @@ def main():
     else:
         print("[Server INFO] Model not found, starting fresh.")
 
+    # Track per-round metrics
+    round_metrics = []
+
     strategy = fl.server.strategy.FedAvg(
         fraction_fit=1.0,
         fraction_evaluate=1.0,
@@ -75,7 +110,7 @@ def main():
         min_available_clients=args.min_clients,
         on_fit_config_fn=get_on_fit_config_fn(args),
         on_evaluate_config_fn=get_on_evaluate_config_fn(args),
-        fit_metrics_aggregation_fn=weighted_average,
+        fit_metrics_aggregation_fn=fit_metrics_aggregation_fn,  # Use custom function for logging
         evaluate_metrics_aggregation_fn=weighted_average,
         initial_parameters=fl.common.ndarrays_to_parameters([val.cpu().numpy() for val in model.state_dict().values()]),
     )
@@ -111,7 +146,9 @@ def main():
             "rounds_trained": args.rounds,
             "client_epochs": args.client_epochs,
             "final_loss": history.losses_distributed[-1][1] if history.losses_distributed else None,
-            "final_metrics": final_metrics
+            "final_metrics": final_metrics,
+            "round_metrics": round_training_history,  # Frontend expects this field name
+            "training_history": round_training_history  # Keep both for compatibility
         }
         all_histories.append(run_metadata)
 
