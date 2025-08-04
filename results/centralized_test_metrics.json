@@ -1,14 +1,14 @@
 [
     {
-        "timestamp": "2025-08-03 16:19:35",
-        "model_name": "VectorNet",
-        "test_loss": 2.340936888666714,
-        "test_min_ade_k1": 0.18963836133480072,
-        "test_min_fde_k1": 0.37169989943504333,
+        "timestamp": "2025-08-04 19:04:30",
+        "model_name": "GATv2",
+        "test_loss": 2.8793845141635224,
+        "test_min_ade_k1": 0.1982826292514801,
+        "test_min_fde_k1": 0.4307573735713959,
         "test_mr_2m": 0.0
     },
     {
-        "timestamp": "2025-08-03 16:25:01",
+        "timestamp": "2025-08-04 19:25:46",
         "model_name": "VectorNet",
         "test_loss": 2.340936888666714,
         "test_min_ade_k1": 0.18963836133480072,
