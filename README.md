@@ -4,7 +4,7 @@ This project implements and compares centralized and federated learning approach
 
 <p align="center">
   <img src="results/test_predictions/centralized/GATv2/test_sample_0_animation.gif" alt="Centralized GATv2 Prediction" width="45%">
-  <img src="results/test_predictions/federated/GATv2/test_sample_0_animation.gif" alt="Federated GATv2 Prediction" width="45%">
+  <img src="results/test_predictions/federated/GATv2/test_sample_7_animation.gif" alt="Federated GATv2 Prediction" width="45%">
 </p>
 
 ## Table of Contents
@@ -58,6 +58,7 @@ The project uses the Argoverse 2 dataset and a Graph Attention Network (GAT) to 
 │   └── server.py           # Federated learning server
 ├── models/
 │   └── gnn.py              # GNN model definition
+│   └── vectornet.py              # Vectornet model definition
 ├── results/
 │   ├── centralized_training_history.json
 │   ├── federated_training_history.json

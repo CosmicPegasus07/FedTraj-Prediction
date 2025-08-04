@@ -7,9 +7,92 @@ import torch
 from av2.datasets.motion_forecasting import scenario_serialization
 from av2.map.map_api import ArgoverseStaticMap
 from matplotlib.path import Path as MplPath
-from matplotlib.patches import PathPatch
+from matplotlib.patches import PathPatch, Rectangle, FancyBboxPatch, Polygon
 from matplotlib.animation import FuncAnimation
 import matplotlib.lines as mlines
+import matplotlib.transforms as transforms
+
+def create_car_patch(x, y, heading, length=4.5, width=2.0, color='blue', alpha=1.0, is_focal=False):
+    """
+    Create a car-shaped patch with proper orientation
+    Args:
+        x, y: position coordinates
+        heading: heading angle in radians
+        length: car length in meters
+        width: car width in meters  
+        color: car color
+        alpha: transparency
+        is_focal: if True, make it larger and more prominent
+    """
+    if is_focal:
+        length *= 1.3
+        width *= 1.3
+    
+    # Create car shape as a rectangle with rounded corners
+    car_patch = FancyBboxPatch(
+        (-length/2, -width/2), length, width,
+        boxstyle="round,pad=0.1",
+        facecolor=color,
+        edgecolor='black',
+        linewidth=1.5 if is_focal else 1.0,
+        alpha=alpha,
+        zorder=10 if is_focal else 8
+    )
+    
+    # Apply rotation and translation
+    t = transforms.Affine2D().rotate(heading).translate(x, y)
+    car_patch.set_transform(t + plt.gca().transData)
+    
+    return car_patch
+
+def create_direction_arrow(x, y, heading, length=3.0, color='white', alpha=0.8):
+    """
+    Create a direction arrow to show vehicle orientation
+    """
+    arrow_length = length
+    dx = arrow_length * np.cos(heading)
+    dy = arrow_length * np.sin(heading)
+    
+    # Create arrow pointing in direction of heading
+    arrow = plt.annotate('', xy=(x + dx/2, y + dy/2), xytext=(x - dx/2, y - dy/2),
+                        arrowprops=dict(arrowstyle='->', color=color, lw=2, alpha=alpha),
+                        zorder=11)
+    return arrow
+
+def get_optimal_view_bounds(all_coords, zoom_factor=0.8):
+    """
+    Calculate optimal view bounds for better visualization
+    Args:
+        all_coords: array of all coordinate points
+        zoom_factor: factor to zoom in (0.8 = 20% closer than default)
+    """
+    if len(all_coords) == 0:
+        return None
+        
+    all_coords_np = np.vstack(all_coords)
+    min_x, min_y = np.min(all_coords_np, axis=0)
+    max_x, max_y = np.max(all_coords_np, axis=0)
+    
+    # Calculate center and range
+    center_x = (min_x + max_x) / 2
+    center_y = (min_y + max_y) / 2
+    range_x = (max_x - min_x) * zoom_factor
+    range_y = (max_y - min_y) * zoom_factor
+    
+    # Ensure minimum range for readability
+    min_range = 30  # meters
+    range_x = max(range_x, min_range)
+    range_y = max(range_y, min_range)
+    
+    # Add some padding
+    padding_factor = 0.15
+    padding_x = range_x * padding_factor
+    padding_y = range_y * padding_factor
+    
+    return {
+        'xlim': (center_x - range_x/2 - padding_x, center_x + range_x/2 + padding_x),
+        'ylim': (center_y - range_y/2 - padding_y, center_y + range_y/2 + padding_y)
+    }
 
 def constrain_predictions_to_map(pred_traj_abs, static_map):
     """
@@ -46,17 +129,214 @@ def constrain_predictions_to_map(pred_traj_abs, static_map):
     
     return constrained_pred
 
+def plot_argoverse2_with_prediction_enhanced(
+    scenario_path,
+    static_map_path,
+    pred_traj_abs,
+    gt_traj_abs=None,
+    title="Trajectory Prediction on Argoverse2 Map",
+    save_path=None,
+    use_enhanced_visuals=True,
+    zoom_factor=0.7
+):
+    """
+    Enhanced plot with car representations and better view
+    """
+    try:
+        scenario_path = Path(scenario_path)
+        static_map_path = Path(static_map_path)
+        scenario = scenario_serialization.load_argoverse_scenario_parquet(scenario_path)
+        static_map = ArgoverseStaticMap.from_json(static_map_path)
+    except Exception as e:
+        print(f"Error loading scenario or map: {e}")
+        return
+
+    fig, ax = plt.subplots(figsize=(14, 14))  # Larger figure for better detail
+
+    all_coords = []
+
+    # Draw map with better styling
+    for drivable_area in static_map.vector_drivable_areas.values():
+        polygon_points = np.array([[point.x, point.y] for point in drivable_area.area_boundary])
+        ax.fill(polygon_points[:, 0], polygon_points[:, 1], 
+                color='#f0f0f0', alpha=0.6, zorder=0, edgecolor='#d0d0d0', linewidth=0.5)
+        all_coords.append(polygon_points)
+
+    # Draw lanes with better styling
+    for lane_segment in static_map.vector_lane_segments.values():
+        left_boundary_xyz = lane_segment.left_lane_boundary.xyz
+        right_boundary_xyz = lane_segment.right_lane_boundary.xyz
+        ax.plot(left_boundary_xyz[:, 0], left_boundary_xyz[:, 1], 
+                '--', color='#808080', alpha=0.8, linewidth=1.2, zorder=1)
+        ax.plot(right_boundary_xyz[:, 0], right_boundary_xyz[:, 1], 
+                '--', color='#808080', alpha=0.8, linewidth=1.2, zorder=1)
+        all_coords.append(left_boundary_xyz[:, :2])
+        all_coords.append(right_boundary_xyz[:, :2])
+
+    focal_track_id = scenario.focal_track_id
+    
+    # Process each track with enhanced visuals
+    for track in scenario.tracks:
+        observed_states = [os for os in track.object_states if os.observed]
+        
+        if not observed_states:
+            continue
+            
+        observed_traj = np.array([[os.position[0], os.position[1]] for os in observed_states])
+        all_coords.append(observed_traj)
+        
+        is_focal = track.track_id == focal_track_id
+        
+        if use_enhanced_visuals:
+            # Draw trajectory path
+            path_color = '#1f77b4' if is_focal else '#9467bd'  # Better colors
+            path_alpha = 0.8 if is_focal else 0.6
+            ax.plot(observed_traj[:, 0], observed_traj[:, 1], 
+                   color=path_color, linewidth=2.5 if is_focal else 1.5, 
+                   alpha=path_alpha, zorder=3)
+            
+            # Add car representations at key points
+            num_cars_to_show = min(5, len(observed_states))  # Show max 5 cars to avoid clutter
+            indices = np.linspace(0, len(observed_states)-1, num_cars_to_show, dtype=int)
+            
+            for i, idx in enumerate(indices):
+                os = observed_states[idx]
+                car_color = '#1f77b4' if is_focal else '#9467bd'
+                car_alpha = 1.0 if i == len(indices)-1 else 0.7  # Last car more prominent
+                
+                # Create car patch
+                car_patch = create_car_patch(
+                    os.position[0], os.position[1], os.heading,
+                    color=car_color, alpha=car_alpha, is_focal=is_focal
+                )
+                ax.add_patch(car_patch)
+                
+                # Add direction arrow for the last observed position
+                if i == len(indices)-1:
+                    create_direction_arrow(
+                        os.position[0], os.position[1], os.heading,
+                        color='white' if is_focal else 'lightgray'
+                    )
+        else:
+            # Fallback to original simple visualization
+            color = 'blue' if is_focal else 'purple'
+            lw = 2 if is_focal else 1
+            alpha = 1.0 if is_focal else 0.7
+            ax.plot(observed_traj[:, 0], observed_traj[:, 1], 
+                   color=color, linewidth=lw, alpha=alpha, marker='o', markersize=2)
+            if is_focal and len(observed_traj) > 0:
+                ax.plot(observed_traj[-1, 0], observed_traj[-1, 1], 
+                       'o', color='darkblue', markersize=8, zorder=6)
+
+    # Enhanced prediction visualization
+    if pred_traj_abs is not None:
+        constrained_pred = constrain_predictions_to_map(pred_traj_abs, static_map)
+        
+        if use_enhanced_visuals:
+            # Draw prediction path with gradient effect
+            ax.plot(constrained_pred[:, 0], constrained_pred[:, 1], 
+                   color='#2ca02c', linewidth=3, zorder=10, alpha=0.9,
+                   linestyle='-', marker='o', markersize=4, markerfacecolor='#2ca02c',
+                   markeredgecolor='green', markeredgewidth=1)
+            
+            # Highlight final prediction with a special marker
+            if len(constrained_pred) > 0:
+                ax.scatter(constrained_pred[-1, 0], constrained_pred[-1, 1], 
+                          color='#ff7f0e', s=120, zorder=12, alpha=1.0, 
+                          marker='*', edgecolors='black', linewidth=2,
+                          label='Final Prediction')
+        else:
+            # Fallback to original visualization
+            ax.plot(constrained_pred[:, 0], constrained_pred[:, 1], 
+                   color='green', linewidth=2, zorder=10)
+            ax.scatter(constrained_pred[:, 0], constrained_pred[:, 1], 
+                      color='green', s=15, zorder=11, alpha=0.8, marker='o')
+            if len(constrained_pred) > 0:
+                ax.scatter(constrained_pred[-1, 0], constrained_pred[-1, 1], 
+                          color='green', s=80, zorder=12, alpha=1.0, 
+                          marker='*', edgecolors='black', linewidth=1)
+        
+        all_coords.append(constrained_pred[:, :2])
+
+    # Enhanced ground truth visualization
+    if gt_traj_abs is not None:
+        if use_enhanced_visuals:
+            ax.plot(gt_traj_abs[:, 0], gt_traj_abs[:, 1], 
+                   color='#d62728', linewidth=3, alpha=0.8, zorder=11,
+                   linestyle='--', marker='s', markersize=6,
+                   markerfacecolor='#d62728', markeredgecolor='white', 
+                   markeredgewidth=1, label='Ground Truth')
+        else:
+            ax.plot(gt_traj_abs[:, 0], gt_traj_abs[:, 1], 
+                   color='red', linewidth=2.5, marker='s', markersize=8, zorder=11)
+        all_coords.append(gt_traj_abs[:, :2])
+
+    # Use optimal view bounds for better zoom
+    if all_coords:
+        view_bounds = get_optimal_view_bounds(all_coords, zoom_factor)
+        if view_bounds:
+            ax.set_xlim(view_bounds['xlim'])
+            ax.set_ylim(view_bounds['ylim'])
+
+    # Enhanced styling
+    ax.set_title(title, fontsize=18, fontweight='bold', pad=20)
+    ax.set_xlabel('X (meters)', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Y (meters)', fontsize=14, fontweight='bold')
+    ax.grid(True, alpha=0.3, linestyle=':', linewidth=0.5)
+    
+    # Enhanced legend
+    if use_enhanced_visuals:
+        legend_elements = [
+            mlines.Line2D([], [], color='#1f77b4', linewidth=3, label='Focal Agent Path'),
+            mlines.Line2D([], [], color='#9467bd', linewidth=2, label='Other Agents Path'),
+            mlines.Line2D([], [], color='#2ca02c', linewidth=3, label='Prediction'),
+        ]
+        if gt_traj_abs is not None:
+            legend_elements.append(mlines.Line2D([], [], color='#d62728', linewidth=3, 
+                                               linestyle='--', label='Ground Truth'))
+    else:
+        # Original legend for backward compatibility
+        legend_elements = [
+            mlines.Line2D([], [], color='blue', marker='o', markersize=5, label='Focal Agent Observed'),
+            mlines.Line2D([], [], color='darkblue', marker='o', markersize=8, label='Focal Agent Last Observed', linestyle='None'),
+            mlines.Line2D([], [], color='purple', marker='o', markersize=5, label='Other Agents Observed'),
+            mlines.Line2D([], [], color='green', marker='*', markersize=10, label='Prediction', linestyle='None'),
+        ]
+        if gt_traj_abs is not None:
+            legend_elements.append(mlines.Line2D([], [], color='red', marker='s', markersize=8, label='Ground Truth', linestyle='None'))
+    
+    ax.legend(handles=legend_elements, loc='upper right', fontsize=12, framealpha=0.9)
+    ax.set_aspect('equal', adjustable='box')
+    plt.tight_layout()
+
+    if save_path:
+        plt.savefig(save_path, bbox_inches='tight', dpi=200)  # Higher DPI for better quality
+        plt.close()
+        print(f"[INFO] Saved enhanced plot to: {save_path}")
+    else:
+        plt.close()
+
 def plot_argoverse2_with_prediction(
     scenario_path,
     static_map_path,
     pred_traj_abs,
     gt_traj_abs=None,
     title="Trajectory Prediction on Argoverse2 Map",
-    save_path=None
+    save_path=None,
+    use_enhanced_visuals=True
 ):
     """
     Plot an Argoverse2 scenario with map, agents, and overlay your prediction.
+    Now defaults to enhanced visuals but maintains backward compatibility.
     """
+    if use_enhanced_visuals:
+        # Use the enhanced version by default
+        return plot_argoverse2_with_prediction_enhanced(
+            scenario_path, static_map_path, pred_traj_abs, gt_traj_abs, 
+            title, save_path, use_enhanced_visuals=True
+        )
+    
+    # Original implementation for backward compatibility
     try:
         scenario_path = Path(scenario_path)
         static_map_path = Path(static_map_path)
@@ -126,8 +406,6 @@ def plot_argoverse2_with_prediction(
         min_x, min_y = np.min(all_coords_np, axis=0)
         max_x, max_y = np.max(all_coords_np, axis=0)
 
-
-
         padding_x = (max_x - min_x) * 0.15
         padding_y = (max_y - min_y) * 0.15
 
@@ -136,7 +414,6 @@ def plot_argoverse2_with_prediction(
 
         ax.set_xlim(min_x - padding_x, max_x + padding_x)
         ax.set_ylim(min_y - padding_y, max_y + padding_y)
-
 
     ax.set_title(title, fontsize=16)
     ax.set_xlabel('X (meters)', fontsize=12)
@@ -163,17 +440,210 @@ def plot_argoverse2_with_prediction(
         plt.close()  # Always close figure to prevent memory leaks
 
 
+def create_animation_for_scenario_enhanced(
+    scenario_path,
+    static_map_path,
+    pred_traj_abs,
+    gt_traj_abs=None,
+    title="Trajectory Animation on Argoverse2 Map", 
+    save_path=None,
+    use_enhanced_visuals=True,
+    zoom_factor=0.7
+):
+    """
+    Enhanced animation with car representations and better visuals
+    """
+    try:
+        scenario_path = Path(scenario_path)
+        static_map_path = Path(static_map_path)
+        scenario = scenario_serialization.load_argoverse_scenario_parquet(scenario_path)
+        static_map = ArgoverseStaticMap.from_json(static_map_path)
+    except Exception as e:
+        print(f"Error loading scenario or map for animation: {e}")
+        return
+
+    fig, ax = plt.subplots(figsize=(14, 14))
+
+    # Draw static map elements with enhanced styling
+    for drivable_area in static_map.vector_drivable_areas.values():
+        polygon_points = np.array([[point.x, point.y] for point in drivable_area.area_boundary])
+        ax.fill(polygon_points[:, 0], polygon_points[:, 1], 
+                color='#f0f0f0', alpha=0.6, zorder=0, edgecolor='#d0d0d0', linewidth=0.5)
+
+    for lane_segment in static_map.vector_lane_segments.values():
+        left_boundary_xyz = lane_segment.left_lane_boundary.xyz
+        right_boundary_xyz = lane_segment.right_lane_boundary.xyz
+        ax.plot(left_boundary_xyz[:, 0], left_boundary_xyz[:, 1], 
+                '--', color='#808080', alpha=0.8, linewidth=1.2, zorder=1)
+        ax.plot(right_boundary_xyz[:, 0], right_boundary_xyz[:, 1], 
+                '--', color='#808080', alpha=0.8, linewidth=1.2, zorder=1)
+
+    all_coords = []
+    for drivable_area in static_map.vector_drivable_areas.values():
+        all_coords.append(np.array([[point.x, point.y] for point in drivable_area.area_boundary]))
+    for lane_segment in static_map.vector_lane_segments.values():
+        all_coords.append(lane_segment.left_lane_boundary.xyz[:, :2])
+        all_coords.append(lane_segment.right_lane_boundary.xyz[:, :2])
+
+    # Prepare agent animation elements
+    agent_paths = {}
+    agent_cars = {}
+    agent_arrows = {}
+    focal_track_id = scenario.focal_track_id
+    
+    for track in scenario.tracks:
+        is_focal = track.track_id == focal_track_id
+        color = '#1f77b4' if is_focal else '#9467bd'
+        lw = 2.5 if is_focal else 1.5
+        alpha = 0.8 if is_focal else 0.6
+        
+        # Create path line for animation
+        line, = ax.plot([], [], color=color, linewidth=lw, alpha=alpha, zorder=3)
+        agent_paths[track.track_id] = line
+        
+        # Store agent car patches and arrows (will be created/updated during animation)
+        agent_cars[track.track_id] = None
+        agent_arrows[track.track_id] = None
+        
+        all_coords.append(np.array([[os.position[0], os.position[1]] for os in track.object_states]))
+
+    # Draw static prediction and ground truth
+    constrained_pred = constrain_predictions_to_map(pred_traj_abs, static_map)
+    if use_enhanced_visuals:
+        ax.plot(constrained_pred[:, 0], constrained_pred[:, 1], 
+               color='#2ca02c', linewidth=3, zorder=10, alpha=0.9,
+               linestyle='-', marker='o', markersize=4, markerfacecolor='#2ca02c',
+               markeredgecolor='green', markeredgewidth=1)
+        if len(constrained_pred) > 0:
+            ax.scatter(constrained_pred[-1, 0], constrained_pred[-1, 1], 
+                      color='#ff7f0e', s=120, zorder=12, alpha=1.0, 
+                      marker='*', edgecolors='black', linewidth=2)
+    else:
+        ax.plot(constrained_pred[:, 0], constrained_pred[:, 1], color='green', linewidth=2, zorder=10)
+        ax.scatter(constrained_pred[:, 0], constrained_pred[:, 1], color='green', s=15, zorder=11, alpha=0.8, marker='o')
+        if len(constrained_pred) > 0:
+            ax.scatter(constrained_pred[-1, 0], constrained_pred[-1, 1], color='green', s=80, zorder=12, alpha=1.0, marker='*', edgecolors='black', linewidth=1)
+    
+    if gt_traj_abs is not None:
+        if use_enhanced_visuals:
+            ax.plot(gt_traj_abs[:, 0], gt_traj_abs[:, 1], 
+                   color='#d62728', linewidth=3, alpha=0.4, zorder=11,
+                   linestyle='--', marker='s', markersize=4)
+        else:
+            ax.plot(gt_traj_abs[:, 0], gt_traj_abs[:, 1], color='red', linewidth=2.5, marker='s', markersize=8, zorder=11, alpha=0.3)
+
+    all_coords.append(pred_traj_abs[:, :2])
+    if gt_traj_abs is not None: 
+        all_coords.append(gt_traj_abs[:, :2])
+
+    # Set optimal view bounds
+    if all_coords:
+        view_bounds = get_optimal_view_bounds(all_coords, zoom_factor)
+        if view_bounds:
+            ax.set_xlim(view_bounds['xlim'])
+            ax.set_ylim(view_bounds['ylim'])
+
+    # Enhanced styling
+    ax.set_title(title, fontsize=18, fontweight='bold', pad=20)
+    ax.set_xlabel('X (meters)', fontsize=14, fontweight='bold')
+    ax.set_ylabel('Y (meters)', fontsize=14, fontweight='bold')
+    ax.grid(True, alpha=0.3, linestyle=':', linewidth=0.5)
+    
+    # Enhanced legend
+    legend_elements = [
+        mlines.Line2D([], [], color='#1f77b4', linewidth=3, label='Focal Agent'),
+        mlines.Line2D([], [], color='#9467bd', linewidth=2, label='Other Agents'),
+        mlines.Line2D([], [], color='#2ca02c', linewidth=3, label='Prediction'),
+    ]
+    if gt_traj_abs is not None:
+        legend_elements.append(mlines.Line2D([], [], color='#d62728', linewidth=3, linestyle='--', label='Ground Truth'))
+    
+    ax.legend(handles=legend_elements, loc='upper right', fontsize=12, framealpha=0.9)
+    ax.set_aspect('equal', adjustable='box')
+
+    def update(frame):
+        num_observed_steps = frame + 1
+        
+        for track in scenario.tracks:
+            observed_states = [os for os in track.object_states if os.timestep < num_observed_steps]
+            is_focal = track.track_id == focal_track_id
+            
+            if observed_states:
+                traj_points = np.array([[os.position[0], os.position[1]] for os in observed_states])
+                agent_paths[track.track_id].set_data(traj_points[:, 0], traj_points[:, 1])
+                
+                # Update car representation for current position
+                if use_enhanced_visuals and len(observed_states) > 0:
+                    current_state = observed_states[-1]
+                    
+                    # Remove old car and arrow if they exist
+                    if agent_cars[track.track_id] is not None:
+                        agent_cars[track.track_id].remove()
+                    if agent_arrows[track.track_id] is not None:
+                        agent_arrows[track.track_id].remove()
+                    
+                    # Create new car patch for current position
+                    car_color = '#1f77b4' if is_focal else '#9467bd'
+                    agent_cars[track.track_id] = create_car_patch(
+                        current_state.position[0], current_state.position[1], current_state.heading,
+                        color=car_color, alpha=1.0, is_focal=is_focal
+                    )
+                    ax.add_patch(agent_cars[track.track_id])
+                    
+                    # Create direction arrow
+                    agent_arrows[track.track_id] = create_direction_arrow(
+                        current_state.position[0], current_state.position[1], current_state.heading,
+                        color='white' if is_focal else 'lightgray'
+                    )
+            else:
+                agent_paths[track.track_id].set_data([], [])
+                # Remove car and arrow if no observed states
+                if agent_cars[track.track_id] is not None:
+                    agent_cars[track.track_id].remove()
+                    agent_cars[track.track_id] = None
+                if agent_arrows[track.track_id] is not None:
+                    agent_arrows[track.track_id].remove()
+                    agent_arrows[track.track_id] = None
+
+        return list(agent_paths.values()) + [p for p in agent_cars.values() if p is not None]
+
+    # Calculate animation frames
+    max_timestep = 0
+    for track in scenario.tracks:
+        if track.object_states:
+            max_timestep = max(max_timestep, max(os.timestep for os in track.object_states))
+    
+    num_frames = max_timestep + 1
+    anim = FuncAnimation(fig, update, frames=num_frames, interval=150, blit=False)  # Slightly slower for better viewing
+
+    if save_path:
+        anim.save(save_path, writer='pillow', dpi=150)  # Higher DPI for better quality
+        plt.close(fig)
+        print(f"[INFO] Saved enhanced animation to: {save_path}")
+    else:
+        plt.close(fig)
+
 def create_animation_for_scenario(
     scenario_path,
     static_map_path,
     pred_traj_abs,
     gt_traj_abs=None,
     title="Trajectory Animation on Argoverse2 Map",
-    save_path=None
+    save_path=None,
+    use_enhanced_visuals=True
 ):
     """
     Create an animation of the scenario with predicted and ground truth trajectories.
+    Now defaults to enhanced visuals but maintains backward compatibility.
     """
+    if use_enhanced_visuals:
+        # Use the enhanced version by default
+        return create_animation_for_scenario_enhanced(
+            scenario_path, static_map_path, pred_traj_abs, gt_traj_abs, 
+            title, save_path, use_enhanced_visuals=True
+        )
+    
+    # Original implementation for backward compatibility 
     try:
         scenario_path = Path(scenario_path)
         static_map_path = Path(static_map_path)
